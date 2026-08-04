@@ -1,0 +1,131 @@
+name: ai-cli-observability
+
+services:
+  pricing-init:
+    image: ai-cli-pricing-exporter:local
+    build: ./pricing-exporter
+    user: "0"
+    entrypoint: ["python", "-c"]
+    command:
+      - "import os; [os.chown(path, 10001, 10001) for path in ('/pricing', '/data')]"
+    volumes:
+      - pricing-files:/pricing
+      - pricing-data:/data
+    restart: "no"
+
+  pricing-exporter:
+    image: ai-cli-pricing-exporter:local
+    build: ./pricing-exporter
+    environment:
+      TZ: "${TZ:-UTC}"
+      LITELLM_LOCAL_MODEL_COST_MAP: "true"
+      STARTUP_RETRIES: "1"
+      RETRY_DELAY: "1"
+    volumes:
+      - pricing-files:/pricing
+      - pricing-data:/data
+    depends_on:
+      pricing-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9101/', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.148.0@sha256:407013e902f9a0ba1d4b2d4c077c47bbaf917c893c52ff39b19efe83a654afda
+    command:
+      - -httpListenAddr=:8428
+      - -storageDataPath=/victoria-metrics-data
+      - -promscrape.config=/etc/victoriametrics/scrape.yml
+      - -promscrape.configCheckInterval=1m
+      - -retentionPeriod=90d
+      - -storage.minFreeDiskSpaceBytes=1GB
+      - -selfScrapeInterval=30s
+    volumes:
+      - victoriametrics-data:/victoria-metrics-data
+      - ./victoriametrics/scrape.yml:/etc/victoriametrics/scrape.yml:ro
+    depends_on:
+      pricing-exporter:
+        condition: service_healthy
+    restart: unless-stopped
+
+  victorialogs:
+    image: victoriametrics/victoria-logs:v1.52.0@sha256:47b820890d64c4575a2a0a46415dcd8a4fd59a0f1fcd6a377693d7aea639442e
+    command:
+      - -storageDataPath=/victoria-logs-data
+      - -httpListenAddr=:9428
+      - -retentionPeriod=30d
+      - -retention.maxDiskSpaceUsageBytes=20GB
+    volumes:
+      - victorialogs-data:/victoria-logs-data
+    restart: unless-stopped
+
+  victoriatraces:
+    image: victoriametrics/victoria-traces:v0.10.0@sha256:66e784a595c4a88e5b1dfab5d153dea442cf1caaeae4d67839c550414c33b3b0
+    command:
+      - -httpListenAddr=:10428
+      - -storageDataPath=/victoria-traces-data
+      - -retentionPeriod=7d
+      - -retention.maxDiskSpaceUsageBytes=5GB
+    volumes:
+      - victoriatraces-data:/victoria-traces-data
+    restart: unless-stopped
+
+  otel-collector:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0@sha256:f2f01157055a9b2aab9df7118e1f1c9abf345e99b23bc7a2bc791db374a7d0f6
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    environment:
+      OTEL_AUTH_TOKEN: "${OTEL_AUTH_TOKEN:?Set OTEL_AUTH_TOKEN in .env}"
+    ports:
+      - "127.0.0.1:${OTLP_HTTP_PORT:-4318}:4318"
+    volumes:
+      - ./collector/config.yaml:/etc/otelcol-contrib/config.yaml:ro
+      - pricing-files:/pricing:ro
+    depends_on:
+      pricing-exporter:
+        condition: service_healthy
+      victoriametrics:
+        condition: service_started
+      victorialogs:
+        condition: service_started
+      victoriatraces:
+        condition: service_started
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.1.1@sha256:7cb8c64c4d57a57e734073f3cc94620adb24a0acb929bd80ba9f14017e3a975b
+    environment:
+      TZ: "${TZ:-UTC}"
+      GF_PLUGINS_PREINSTALL: "victoriametrics-logs-datasource@0.29.0"
+      GF_SECURITY_ADMIN_USER: "${GRAFANA_ADMIN_USER:-admin}"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - victoriametrics
+      - victorialogs
+      - victoriatraces
+    restart: unless-stopped
+
+volumes:
+  grafana-data:
+  pricing-data:
+  pricing-files:
+  victorialogs-data:
+  victoriametrics-data:
+  victoriatraces-data:

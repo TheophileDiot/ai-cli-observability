@@ -1,0 +1,10 @@
+compose.yaml
+Dockerfile
+.dockerignore
+requirements.in
+*.md
+.env*
+__pycache__/
+*.pyc
+venv/
+.venv/

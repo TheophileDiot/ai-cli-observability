@@ -1,0 +1,151 @@
+extensions:
+  bearertokenauth:
+    token: "${OTEL_AUTH_TOKEN}"
+  health_check:
+    endpoint: "0.0.0.0:13133"
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: "0.0.0.0:4318"
+        auth:
+          authenticator: bearertokenauth
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  transform/codex_enrichment:
+    error_mode: ignore
+    log_statements:
+      - context: log
+        statements:
+          - set(attributes["session_source"], "unknown") where attributes["event.name"] == "codex.conversation_starts" and attributes["session_source"] == nil
+          - set(attributes["session_source"], "unknown") where attributes["event.name"] == "codex.conversation_starts" and attributes["session_source"] == ""
+          - set(attributes["effective_cost_usd"], attributes["cost_usd"]) where attributes["cost_usd"] != nil
+          - set(attributes["cost_source"], "native") where attributes["cost_usd"] != nil
+          - set(attributes["pricing_as_of"], "2026-07-11") where attributes["cost_usd"] != nil
+          # Standard prices come from pricing-exporter. Tier multipliers follow:
+          # https://developers.openai.com/api/docs/models and https://openai.com/api-priority-processing/
+          - set(attributes["cached_token_count"], 0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cached_token_count"] == nil
+          # GPT-5.4: long context first because Priority excludes requests above 272K input tokens.
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT54_IN} * 2.0 + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT54_CACHED} * 2.0 + Double(attributes["output_token_count"]) * ${file:/pricing/GPT54_OUT} * 1.5) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and Double(attributes["input_token_count"]) > 272000.0 and IsMatch(attributes["model"], "^gpt-5\\.4($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          - set(attributes["cost_usd_estimated"], (((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT54_IN} + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT54_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GPT54_OUT}) * 2.0) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and Double(attributes["input_token_count"]) <= 272000.0 and attributes["service_tier"] == "priority" and IsMatch(attributes["model"], "^gpt-5\\.4($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT54_IN} + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT54_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GPT54_OUT}) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and IsMatch(attributes["model"], "^gpt-5\\.4($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          # GPT-5.4 mini: no long-context surcharge; Priority is available through 272K input tokens.
+          - set(attributes["cost_usd_estimated"], (((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT54_MINI_IN} + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT54_MINI_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GPT54_MINI_OUT}) * 2.0) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and Double(attributes["input_token_count"]) <= 272000.0 and attributes["service_tier"] == "priority" and IsMatch(attributes["model"], "^gpt-5\\.4-mini($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT54_MINI_IN} + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT54_MINI_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GPT54_MINI_OUT}) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and IsMatch(attributes["model"], "^gpt-5\\.4-mini($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          # GPT-5.5: Priority is 2.5x standard; long context is 2x input/cache and 1.5x output.
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT55_IN} * 2.0 + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT55_CACHED} * 2.0 + Double(attributes["output_token_count"]) * ${file:/pricing/GPT55_OUT} * 1.5) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and Double(attributes["input_token_count"]) > 272000.0 and IsMatch(attributes["model"], "^gpt-5\\.5($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          - set(attributes["cost_usd_estimated"], (((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT55_IN} + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT55_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GPT55_OUT}) * 2.5) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and Double(attributes["input_token_count"]) <= 272000.0 and attributes["service_tier"] == "priority" and IsMatch(attributes["model"], "^gpt-5\\.5($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT55_IN} + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT55_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GPT55_OUT}) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and IsMatch(attributes["model"], "^gpt-5\\.5($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          # GPT-5.6 Sol (and the gpt-5.6 alias).
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT56_SOL_IN} * 2.0 + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT56_SOL_CACHED} * 2.0 + Double(attributes["output_token_count"]) * ${file:/pricing/GPT56_SOL_OUT} * 1.5) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and Double(attributes["input_token_count"]) > 272000.0 and IsMatch(attributes["model"], "^gpt-5\\.6(-sol)?($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          - set(attributes["cost_usd_estimated"], (((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT56_SOL_IN} + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT56_SOL_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GPT56_SOL_OUT}) * 2.0) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and Double(attributes["input_token_count"]) <= 272000.0 and attributes["service_tier"] == "priority" and IsMatch(attributes["model"], "^gpt-5\\.6(-sol)?($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT56_SOL_IN} + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT56_SOL_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GPT56_SOL_OUT}) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and IsMatch(attributes["model"], "^gpt-5\\.6(-sol)?($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          # Legacy GPT-5 mini and GPT-5.2/5.3 Codex.
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT5_MINI_IN} + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT5_MINI_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GPT5_MINI_OUT}) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and IsMatch(attributes["model"], "^gpt-5( mini|-mini)($|-)")
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT53_CODEX_IN} + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT53_CODEX_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GPT53_CODEX_OUT}) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and IsMatch(attributes["model"], "^gpt-5\\.[23]-codex($|-)")
+          - set(attributes["effective_cost_usd"], attributes["cost_usd_estimated"]) where attributes["cost_usd_estimated"] != nil and attributes["cost_usd"] == nil
+          - set(attributes["cost_source"], "estimated") where attributes["cost_usd_estimated"] != nil and attributes["cost_usd"] == nil
+          - set(attributes["pricing_as_of"], "2026-07-11") where attributes["cost_usd_estimated"] != nil and attributes["cost_usd"] == nil
+          - set(attributes["cost_source"], "unsupported") where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["effective_cost_usd"] == nil
+          - set(attributes["pricing_as_of"], "2026-07-11") where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["effective_cost_usd"] == nil
+  transform/gemini_enrichment:
+    error_mode: ignore
+    log_statements:
+      - context: log
+        statements:
+          # ---- Specific models (most accurate, matched first) ----
+          # Price files are generated by pricing-exporter from LiteLLM data.
+          # Gemini 2.0 Flash
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_content_token_count"])) * ${file:/pricing/GEMINI_20_FLASH_IN} + Double(attributes["cached_content_token_count"]) * ${file:/pricing/GEMINI_20_FLASH_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_20_FLASH_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] != nil and IsMatch(attributes["model"], "^gemini-2\\.0-flash")
+          - set(attributes["cost_usd_estimated"], (Double(attributes["input_token_count"]) * ${file:/pricing/GEMINI_20_FLASH_IN} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_20_FLASH_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] == nil and IsMatch(attributes["model"], "^gemini-2\\.0-flash")
+          # Gemini 2.5 Flash-Lite
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_content_token_count"])) * ${file:/pricing/GEMINI_25_FLASH_LITE_IN} + Double(attributes["cached_content_token_count"]) * ${file:/pricing/GEMINI_25_FLASH_LITE_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_25_FLASH_LITE_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] != nil and attributes["cost_usd_estimated"] == nil and IsMatch(attributes["model"], "^gemini-2\\.5-flash-lite")
+          - set(attributes["cost_usd_estimated"], (Double(attributes["input_token_count"]) * ${file:/pricing/GEMINI_25_FLASH_LITE_IN} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_25_FLASH_LITE_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] == nil and attributes["cost_usd_estimated"] == nil and IsMatch(attributes["model"], "^gemini-2\\.5-flash-lite")
+          # Gemini 2.5 Flash
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_content_token_count"])) * ${file:/pricing/GEMINI_25_FLASH_IN} + Double(attributes["cached_content_token_count"]) * ${file:/pricing/GEMINI_25_FLASH_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_25_FLASH_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] != nil and attributes["cost_usd_estimated"] == nil and IsMatch(attributes["model"], "^gemini-2\\.5-flash")
+          - set(attributes["cost_usd_estimated"], (Double(attributes["input_token_count"]) * ${file:/pricing/GEMINI_25_FLASH_IN} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_25_FLASH_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] == nil and attributes["cost_usd_estimated"] == nil and IsMatch(attributes["model"], "^gemini-2\\.5-flash")
+          # Gemini 2.5 Pro
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_content_token_count"])) * ${file:/pricing/GEMINI_25_PRO_IN} + Double(attributes["cached_content_token_count"]) * ${file:/pricing/GEMINI_25_PRO_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_25_PRO_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] != nil and attributes["cost_usd_estimated"] == nil and IsMatch(attributes["model"], "^gemini-2\\.5-pro")
+          - set(attributes["cost_usd_estimated"], (Double(attributes["input_token_count"]) * ${file:/pricing/GEMINI_25_PRO_IN} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_25_PRO_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] == nil and attributes["cost_usd_estimated"] == nil and IsMatch(attributes["model"], "^gemini-2\\.5-pro")
+          # Gemini 3.x Flash-Lite
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_content_token_count"])) * ${file:/pricing/GEMINI_3X_FLASH_LITE_IN} + Double(attributes["cached_content_token_count"]) * ${file:/pricing/GEMINI_3X_FLASH_LITE_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_3X_FLASH_LITE_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] != nil and attributes["cost_usd_estimated"] == nil and IsMatch(attributes["model"], "gemini-3.*flash-lite")
+          - set(attributes["cost_usd_estimated"], (Double(attributes["input_token_count"]) * ${file:/pricing/GEMINI_3X_FLASH_LITE_IN} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_3X_FLASH_LITE_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] == nil and attributes["cost_usd_estimated"] == nil and IsMatch(attributes["model"], "gemini-3.*flash-lite")
+          # ---- Family fallbacks (future-proof, guard ensures specifics always win) ----
+          # Any Gemini Pro (3-pro, 3.1-pro, 4-pro, ...)
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_content_token_count"])) * ${file:/pricing/GEMINI_PRO_IN} + Double(attributes["cached_content_token_count"]) * ${file:/pricing/GEMINI_PRO_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_PRO_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] != nil and attributes["cost_usd_estimated"] == nil and IsMatch(attributes["model"], "gemini-.*pro")
+          - set(attributes["cost_usd_estimated"], (Double(attributes["input_token_count"]) * ${file:/pricing/GEMINI_PRO_IN} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_PRO_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] == nil and attributes["cost_usd_estimated"] == nil and IsMatch(attributes["model"], "gemini-.*pro")
+          # Any Gemini Flash (3-flash, 3.1-flash, 4-flash, ...)
+          - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_content_token_count"])) * ${file:/pricing/GEMINI_FLASH_IN} + Double(attributes["cached_content_token_count"]) * ${file:/pricing/GEMINI_FLASH_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_FLASH_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] != nil and attributes["cost_usd_estimated"] == nil and IsMatch(attributes["model"], "gemini-.*flash")
+          - set(attributes["cost_usd_estimated"], (Double(attributes["input_token_count"]) * ${file:/pricing/GEMINI_FLASH_IN} + Double(attributes["output_token_count"]) * ${file:/pricing/GEMINI_FLASH_OUT}) / 1000000.0) where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["cached_content_token_count"] == nil and attributes["cost_usd_estimated"] == nil and IsMatch(attributes["model"], "gemini-.*flash")
+          # --- Set effective cost and metadata for all matched models ---
+          - set(attributes["effective_cost_usd"], attributes["cost_usd_estimated"]) where attributes["event.name"] == "gemini_cli.api_response" and attributes["cost_usd_estimated"] != nil
+          - set(attributes["cost_source"], "estimated") where attributes["event.name"] == "gemini_cli.api_response" and attributes["cost_usd_estimated"] != nil
+          - set(attributes["pricing_as_of"], "2026-07-11") where attributes["event.name"] == "gemini_cli.api_response" and attributes["cost_usd_estimated"] != nil
+          # --- Unsupported model fallback ---
+          - set(attributes["cost_source"], "unsupported") where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["effective_cost_usd"] == nil
+          - set(attributes["pricing_as_of"], "2026-07-11") where attributes["event.name"] == "gemini_cli.api_response" and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and attributes["effective_cost_usd"] == nil
+  # Normalize dotted OTel attributes once so dashboards can use the stable
+  # `event_name`, `service_name`, and `event_kind` field names.
+  #
+  # MUST run after transform/codex_enrichment and transform/gemini_enrichment:
+  # both of those read attributes["event.name"], which this processor removes.
+  transform/vl_field_names:
+    error_mode: ignore
+    log_statements:
+      - context: resource
+        statements:
+          - set(attributes["service_name"], attributes["service.name"]) where attributes["service.name"] != nil
+          - delete_key(attributes, "service.name")
+      - context: log
+        statements:
+          - set(attributes["event_name"], attributes["event.name"]) where attributes["event.name"] != nil
+          - delete_key(attributes, "event.name")
+          - set(attributes["event_kind"], attributes["event.kind"]) where attributes["event.kind"] != nil
+          - delete_key(attributes, "event.kind")
+  batch:
+    timeout: 2s
+    send_batch_size: 1024
+
+exporters:
+  # The pipeline already produces Prometheus-compatible series, so remote write
+  # is the shortest path into VictoriaMetrics.
+  prometheusremotewrite:
+    endpoint: "http://victoriametrics:8428/api/v1/write"
+    resource_to_telemetry_conversion:
+      enabled: true
+  # Use `logs_endpoint` because VictoriaLogs provides the complete ingestion
+  # path. The generic `endpoint` setting would append `/v1/logs` again.
+  otlp_http/vlogs:
+    logs_endpoint: "http://victorialogs:9428/insert/opentelemetry/v1/logs"
+  # Use `traces_endpoint` because the VictoriaTraces ingestion path is already
+  # complete. The generic `endpoint` setting would append `/v1/traces` again.
+  otlp_http/vtraces:
+    traces_endpoint: "http://victoriatraces:10428/insert/opentelemetry/v1/traces"
+
+service:
+  extensions: [bearertokenauth, health_check]
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheusremotewrite]
+    logs:
+      receivers: [otlp]
+      processors:
+        [
+          memory_limiter,
+          transform/codex_enrichment,
+          transform/gemini_enrichment,
+          transform/vl_field_names,
+          batch,
+        ]
+      exporters: [otlp_http/vlogs]
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_http/vtraces]

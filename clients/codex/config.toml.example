@@ -1,0 +1,32 @@
+# Merge this example into ~/.codex/config.toml.
+#
+# Exports logs, traces, metrics, and runtime metrics. Raw prompts stay disabled.
+
+[features]
+runtime_metrics = true
+
+[otel]
+log_user_prompt = false
+environment = "dev"
+# Each signal needs its complete OTLP/HTTP path.
+
+[otel.exporter."otlp-http"]
+endpoint = "http://localhost:4318/v1/logs"
+protocol = "binary"
+
+[otel.exporter."otlp-http".headers]
+Authorization = "Bearer ${OTEL_AUTH_TOKEN}"
+
+[otel.trace_exporter."otlp-http"]
+endpoint = "http://localhost:4318/v1/traces"
+protocol = "binary"
+
+[otel.trace_exporter."otlp-http".headers]
+Authorization = "Bearer ${OTEL_AUTH_TOKEN}"
+
+[otel.metrics_exporter."otlp-http"]
+endpoint = "http://localhost:4318/v1/metrics"
+protocol = "binary"
+
+[otel.metrics_exporter."otlp-http".headers]
+Authorization = "Bearer ${OTEL_AUTH_TOKEN}"

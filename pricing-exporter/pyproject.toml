@@ -1,0 +1,9 @@
+[project]
+name = "pricing-exporter"
+version = "0.0.0"
+description = "Prometheus exporter and collector-side pricing source for AI CLI telemetry."
+requires-python = ">=3.13"
+dependencies = [
+    "litellm==1.93.0",
+    "requests==2.33.1",
+]
