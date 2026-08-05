@@ -1,5 +1,52 @@
 {
-  "annotations": {"list": []},
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "builtIn": 0,
+        "datasource": {
+          "type": "prometheus",
+          "uid": "victoriametrics"
+        },
+        "enable": true,
+        "expr": "hermes_ai_credit_reset_timestamp_seconds{cli=\"claude\"} * 1000",
+        "hide": false,
+        "iconColor": "#FF9830",
+        "name": "Credit Reset",
+        "textFormat": "Credits Reset",
+        "titleFormat": "Credit Reset",
+        "type": "tags",
+        "useValueForTime": true
+      },
+      {
+        "builtIn": 0,
+        "datasource": {
+          "type": "prometheus",
+          "uid": "victoriametrics"
+        },
+        "enable": true,
+        "expr": "hermes_ai_credit_reset_timestamp_seconds{cli=\"codex\"} * 1000",
+        "hide": false,
+        "iconColor": "#10A37F",
+        "name": "Codex Credit Reset",
+        "textFormat": "Codex Credits Reset",
+        "titleFormat": "Codex Credit Reset",
+        "type": "tags",
+        "useValueForTime": true
+      }
+    ]
+  },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 2,
@@ -14,7 +61,7 @@
         "y": 0
       },
       "id": 1,
-      "title": "Overview",
+      "title": "All Agents — Overview",
       "type": "row"
     },
     {
@@ -26,13 +73,11 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Estimated Cost",
-          "unit": "currencyEUR",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "yellow",
@@ -43,8 +88,10 @@
                 "value": 200
               }
             ]
-          }
-        }
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
@@ -52,80 +99,32 @@
         "x": 0,
         "y": 1
       },
+      "hideTimeOverride": true,
       "id": 2,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce | math (max(cu, 0) - max(sonnet_promo, 0) / 3 + max(ce, 0)) * ${eur_rate} as cost_eur | fields cost_eur",
           "instant": true,
           "legendFormat": "Estimated Cost",
           "queryType": "stats",
-          "refId": "A",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "timeFrom": "now/d",
-      "hideTimeOverride": true,
       "title": "Estimated API-Equivalent Cost",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "victoriametrics-logs-datasource",
-        "uid": "victorialogs"
-      },
-      "description": "API request count for the selected time range.",
-      "fieldConfig": {
-        "defaults": {
-          "displayName": "API Requests",
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        }
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
-        "y": 1
-      },
-      "id": 3,
-      "options": {
-        "reduceOptions": {
-          "calcs": ["sum"]
-        },
-        "colorMode": "value",
-        "graphMode": "area"
-      },
-      "targets": [
-        {
-          "expr": "{service_name=~\"${service:regex}\"} | stats count() if (\"claude_code.api_request\") r1, count() if (event_name:=\"codex.websocket_request\") r2, count() if (event_name:=\"gemini_cli.api_request\") r3 | math (r1 + r2 + r3) as requests | fields requests",
-          "instant": true,
-          "legendFormat": "API Requests",
-          "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
-        }
-      ],
-      "title": "API Requests",
       "type": "stat"
     },
     {
@@ -137,13 +136,11 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Error Rate",
-          "unit": "percent",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "yellow",
@@ -154,8 +151,10 @@
                 "value": 5
               }
             ]
-          }
-        }
+          },
+          "unit": "percent"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
@@ -165,25 +164,81 @@
       },
       "id": 4,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats count() if (\"claude_code.api_error\") e1, count() if (event_name:~\"codex[.].*error|gemini_cli[.].*error\") e2, count() if (\"claude_code.api_request\") r1, count() if (event_name:=\"codex.websocket_request\") r2, count() if (event_name:=\"gemini_cli.api_request\") r3 | math 100 * (e1 + e2) / (r1 + r2 + r3) as error_pct | fields error_pct",
           "instant": true,
           "legendFormat": "Error Rate",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "title": "Error Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "victorialogs"
+      },
+      "description": "API request count for the selected time range.",
+      "fieldConfig": {
+        "defaults": {
+          "displayName": "API Requests",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "expr": "{service_name=~\"${service:regex}\"} | stats count() if (\"claude_code.api_request\") r1, count() if (event_name:=\"codex.websocket_request\") r2, count() if (event_name:=\"gemini_cli.api_request\") r3 | math (r1 + r2 + r3) as requests | fields requests",
+          "instant": true,
+          "legendFormat": "API Requests",
+          "queryType": "stats",
+          "refId": "A"
+        }
+      ],
+      "title": "API Requests",
       "type": "stat"
     },
     {
@@ -195,13 +250,11 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "p95",
-          "unit": "ms",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "yellow",
@@ -212,8 +265,10 @@
                 "value": 30000
               }
             ]
-          }
-        }
+          },
+          "unit": "ms"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
@@ -223,22 +278,25 @@
       },
       "id": 18,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} duration_ms:* | stats quantile(0.95, duration_ms) p95 | fields p95",
           "instant": true,
           "legendFormat": "p95",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "title": "P95 Request Duration",
@@ -253,17 +311,17 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Tokens / Request",
-          "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "super-light-blue",
-                "value": null
+                "color": "super-light-blue"
               }
             ]
-          }
-        }
+          },
+          "unit": "short"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
@@ -273,22 +331,25 @@
       },
       "id": 6,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats sum(input_tokens) in_tok, sum(output_tokens) out_tok, sum(input_token_count) in_tok_c, sum(output_token_count) out_tok_c, count() if (\"claude_code.api_request\") r1, count() if (event_name:=\"codex.websocket_request\") r2, count() if (event_name:=\"gemini_cli.api_request\") r3 | math (max(in_tok,0) + max(out_tok,0) + max(in_tok_c,0) + max(out_tok_c,0)) / (r1 + r2 + r3) as tokens_per_request | fields tokens_per_request",
           "instant": true,
           "legendFormat": "Tokens / Request",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "title": "Tokens / Request",
@@ -303,17 +364,17 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Tool Results / Request",
-          "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "orange",
-                "value": null
+                "color": "orange"
               }
             ]
-          }
-        }
+          },
+          "unit": "short"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
@@ -323,25 +384,160 @@
       },
       "id": 7,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats count() if (\"claude_code.tool_result\") t1, count() if (event_name:=\"codex.tool_result\") t2, count() if (event_name:=\"gemini_cli.tool_call\") t3, count() if (\"claude_code.api_request\") r1, count() if (event_name:=\"codex.websocket_request\") r2, count() if (event_name:=\"gemini_cli.api_request\") r3 | math (t1 + t2 + t3) / (r1 + r2 + r3) as tools_per_request | fields tools_per_request",
           "instant": true,
           "legendFormat": "Tool Results / Request",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "title": "Tool Results / Request",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "description": "Countdown to next Anthropic credit reset (5h cycle, anchor UTC 02:00).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "orange",
+                "value": 600
+              },
+              {
+                "color": "green",
+                "value": 1800
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
+      "id": 91,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "expr": "(18000 - ((vector(time()) - ${reset_offset}) % 18000)) % 18000",
+          "legendFormat": "Claude",
+          "refId": "A"
+        }
+      ],
+      "title": "Claude — Next Credit Reset",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "description": "Countdown to next Codex (OpenAI) credit reset (5h cycle, anchor UTC 03:55).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "orange",
+                "value": 600
+              },
+              {
+                "color": "#10A37F",
+                "value": 1800
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "id": 92,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "expr": "(18000 - ((vector(time()) - ${codex_reset_offset}) % 18000)) % 18000",
+          "legendFormat": "Codex",
+          "refId": "A"
+        }
+      ],
+      "title": "Codex — Next Credit Reset",
       "type": "stat"
     },
     {
@@ -350,10 +546,10 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 9
       },
       "id": 10,
-      "title": "Trends",
+      "title": "All Agents — Trends",
       "type": "row"
     },
     {
@@ -369,11 +565,11 @@
           },
           "custom": {
             "axisSoftMin": 0,
+            "barAlignment": 0,
             "drawStyle": "bars",
             "fillOpacity": 85,
             "lineWidth": 0,
-            "showPoints": "never",
-            "barAlignment": 0
+            "showPoints": "never"
           },
           "unit": "currencyEUR"
         },
@@ -383,12 +579,14 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 6
+        "y": 10
       },
       "id": 11,
       "options": {
         "legend": {
-          "calcs": ["sum"],
+          "calcs": [
+            "sum"
+          ],
           "displayMode": "table",
           "placement": "bottom"
         },
@@ -399,14 +597,14 @@
       },
       "targets": [
         {
-          "refId": "A",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "legendFormat": "Estimated Cost",
           "expr": "{service_name=~\"${service:regex}\"} model:* | stats sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce | math (max(cu, 0) - max(sonnet_promo, 0) / 3 + max(ce, 0)) * ${eur_rate} as cost_eur | fields cost_eur",
-          "queryType": "statsRange"
+          "legendFormat": "Estimated Cost",
+          "queryType": "statsRange",
+          "refId": "A"
         }
       ],
       "title": "Cost per Interval",
@@ -469,12 +667,15 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 6
+        "y": 10
       },
       "id": 12,
+      "interval": "1m",
       "options": {
         "legend": {
-          "calcs": ["sum"],
+          "calcs": [
+            "sum"
+          ],
           "displayMode": "table",
           "placement": "bottom"
         },
@@ -485,47 +686,46 @@
       },
       "targets": [
         {
-          "refId": "A",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "legendFormat": "Input (Claude)",
           "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" input_tokens:* | stats sum(input_tokens) input_claude",
-          "queryType": "statsRange"
+          "legendFormat": "Input (Claude)",
+          "queryType": "statsRange",
+          "refId": "A"
         },
         {
-          "refId": "B",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "legendFormat": "Output (Claude)",
           "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" output_tokens:* | stats sum(output_tokens) output_claude",
-          "queryType": "statsRange"
+          "legendFormat": "Output (Claude)",
+          "queryType": "statsRange",
+          "refId": "B"
         },
         {
-          "refId": "C",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "legendFormat": "Input (Codex/Gemini)",
           "expr": "{service_name=~\"${service:regex}\"} input_token_count:* | stats sum(input_token_count) input_tokens",
-          "queryType": "statsRange"
+          "legendFormat": "Input (Codex/Gemini)",
+          "queryType": "statsRange",
+          "refId": "C"
         },
         {
-          "refId": "D",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "legendFormat": "Output (Codex/Gemini)",
           "expr": "{service_name=~\"${service:regex}\"} output_token_count:* | stats sum(output_token_count) output_tokens",
-          "queryType": "statsRange"
+          "legendFormat": "Output (Codex/Gemini)",
+          "queryType": "statsRange",
+          "refId": "D"
         }
       ],
-      "interval": "1m",
       "title": "Token Direction per Interval",
       "type": "timeseries"
     },
@@ -539,11 +739,11 @@
         "defaults": {
           "custom": {
             "axisSoftMin": 0,
+            "barAlignment": 0,
             "drawStyle": "bars",
             "fillOpacity": 70,
             "lineWidth": 0,
-            "showPoints": "never",
-            "barAlignment": 0
+            "showPoints": "never"
           },
           "unit": "ms"
         },
@@ -599,12 +799,15 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 6
+        "y": 10
       },
       "id": 13,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "max"],
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom"
         },
@@ -615,13 +818,14 @@
       },
       "targets": [
         {
-          "expr": "{service_name=~\"${service:regex}\"} duration_ms:* | stats by (service_name) quantile(0.50, duration_ms) p50",
-          "legendFormat": "{{service_name}}",
-          "queryType": "statsRange",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
-          }
+          },
+          "expr": "{service_name=~\"${service:regex}\"} duration_ms:* | stats by (service_name) quantile(0.50, duration_ms) p50",
+          "legendFormat": "{{service_name}}",
+          "queryType": "statsRange",
+          "refId": "A"
         }
       ],
       "title": "Median Latency by Service",
@@ -633,10 +837,10 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 18
       },
       "id": 20,
-      "title": "Efficiency & Reliability",
+      "title": "All Agents — Efficiency & Reliability",
       "type": "row"
     },
     {
@@ -648,11 +852,11 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
+            "barAlignment": 0,
             "drawStyle": "bars",
             "fillOpacity": 70,
             "lineWidth": 0,
             "showPoints": "never",
-            "barAlignment": 0,
             "stacking": {
               "mode": "none"
             }
@@ -719,12 +923,15 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 15
+        "y": 19
       },
       "id": 14,
       "options": {
         "legend": {
-          "calcs": ["sum", "max"],
+          "calcs": [
+            "sum",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "right"
         },
@@ -735,31 +942,34 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats count() if (\"claude_code.api_request\") r1, count() if (event_name:=\"codex.websocket_request\") r2, count() if (event_name:=\"gemini_cli.api_request\") r3 | math (r1 + r2 + r3) as requests | fields requests",
           "legendFormat": "Requests",
           "queryType": "statsRange",
+          "refId": "A"
+        },
+        {
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
-          }
-        },
-        {
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats count() if (\"claude_code.api_error\") e1, count() if (event_name:~\"codex[.].*error|gemini_cli[.].*error\") e2 | math e1 + e2 as errors | fields errors",
           "legendFormat": "Errors",
           "queryType": "statsRange",
+          "refId": "B"
+        },
+        {
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
-          }
-        },
-        {
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats count() if (\"claude_code.tool_result\") t1, count() if (event_name:=\"codex.tool_result\") t2, count() if (event_name:=\"gemini_cli.tool_call\") t3 | math t1 + t2 + t3 as tool_results | fields tool_results",
           "legendFormat": "Tool Results",
           "queryType": "statsRange",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "C"
         }
       ],
       "title": "Request, Error, and Tool Activity",
@@ -784,18 +994,23 @@
             }
           },
           "unit": "short"
-        }
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 15
+        "y": 19
       },
       "id": 15,
+      "interval": "1m",
       "options": {
         "legend": {
-          "calcs": ["sum", "mean"],
+          "calcs": [
+            "sum",
+            "mean"
+          ],
           "displayMode": "table",
           "placement": "right"
         },
@@ -806,67 +1021,66 @@
       },
       "targets": [
         {
-          "refId": "A",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "legendFormat": "Cache Read (Claude)",
           "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" cache_read_tokens:* | stats sum(cache_read_tokens) cache_read_claude",
-          "queryType": "statsRange"
+          "legendFormat": "Cache Read (Claude)",
+          "queryType": "statsRange",
+          "refId": "A"
         },
         {
-          "refId": "B",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "legendFormat": "Cache Creation (Claude)",
           "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" cache_creation_tokens:* | stats sum(cache_creation_tokens) cache_creation_claude",
-          "queryType": "statsRange"
+          "legendFormat": "Cache Creation (Claude)",
+          "queryType": "statsRange",
+          "refId": "B"
         },
         {
-          "refId": "C",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "legendFormat": "Cached (Codex)",
           "expr": "{service_name=~\"${service:regex}\"} cached_token_count:* | stats sum(cached_token_count) cached_codex",
-          "queryType": "statsRange"
+          "legendFormat": "Cached (Codex)",
+          "queryType": "statsRange",
+          "refId": "C"
         },
         {
-          "refId": "D",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "legendFormat": "Reasoning (Codex)",
           "expr": "{service_name=~\"${service:regex}\"} reasoning_token_count:* | stats sum(reasoning_token_count) reasoning_codex",
-          "queryType": "statsRange"
+          "legendFormat": "Reasoning (Codex)",
+          "queryType": "statsRange",
+          "refId": "D"
         },
         {
-          "refId": "E",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "legendFormat": "Cached (Gemini)",
           "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" cached_content_token_count:* | stats sum(cached_content_token_count) cached_gemini",
-          "queryType": "statsRange"
+          "legendFormat": "Cached (Gemini)",
+          "queryType": "statsRange",
+          "refId": "E"
         },
         {
-          "refId": "F",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "legendFormat": "Thinking (Gemini)",
           "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" thoughts_token_count:* | stats sum(thoughts_token_count) thinking_gemini",
-          "queryType": "statsRange"
+          "legendFormat": "Thinking (Gemini)",
+          "queryType": "statsRange",
+          "refId": "F"
         }
       ],
-      "interval": "1m",
       "title": "Cache & Reasoning Tokens",
       "type": "timeseries"
     },
@@ -876,10 +1090,10 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 27
       },
       "id": 60,
-      "title": "Breakdown",
+      "title": "All Agents — Breakdown",
       "type": "row"
     },
     {
@@ -890,61 +1104,70 @@
       "description": "API request distribution by AI model.",
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
           "color": {
             "mode": "palette-classic"
-          }
-        }
+          },
+          "unit": "short"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 24
+        "y": 28
       },
       "id": 61,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
-        "pieType": "donut",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
         "legend": {
           "displayMode": "table",
           "placement": "right",
-          "values": ["value", "percent"]
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
         }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" model:* | stats by (model) count() n",
           "legendFormat": "{{model}}",
           "queryType": "stats",
+          "refId": "A"
+        },
+        {
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
-          }
-        },
-        {
+          },
           "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.websocket_request\" model:* | stats by (model) count() n",
           "legendFormat": "{{model}}",
           "queryType": "stats",
+          "refId": "B"
+        },
+        {
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
-          }
-        },
-        {
+          },
           "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_request\" model:* | stats by (model) count() n",
           "legendFormat": "{{model}}",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "C"
         }
       ],
       "title": "Requests by Model",
@@ -958,61 +1181,70 @@
       "description": "Most frequently used tools across the selected time range.",
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
           "color": {
             "mode": "palette-classic"
-          }
-        }
+          },
+          "unit": "short"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 24
+        "y": 28
       },
       "id": 62,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
-        "pieType": "donut",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
         "legend": {
           "displayMode": "table",
           "placement": "right",
-          "values": ["value", "percent"]
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
         }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} \"claude_code.tool_result\" tool_name:* | stats by (tool_name) count() hits | sort by (hits desc) | limit 15",
           "legendFormat": "{{tool_name}}",
           "queryType": "stats",
+          "refId": "A"
+        },
+        {
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
-          }
-        },
-        {
+          },
           "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.tool_result\" tool_name:* | stats by (tool_name) count() hits | sort by (hits desc) | limit 5",
           "legendFormat": "{{tool_name}}",
           "queryType": "stats",
+          "refId": "B"
+        },
+        {
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
-          }
-        },
-        {
+          },
           "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.tool_call\" tool_name:* | stats by (tool_name) count() hits | sort by (hits desc) | limit 5",
           "legendFormat": "{{tool_name}}",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "C"
         }
       ],
       "title": "Top Tools",
@@ -1026,34 +1258,38 @@
       "description": "Estimated API-equivalent cost by model from immutable request events, including the time-bounded Claude Sonnet 5 introductory price.",
       "fieldConfig": {
         "defaults": {
-          "unit": "currencyEUR",
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "barAlignment": 0,
             "drawStyle": "bars",
             "fillOpacity": 70,
             "lineWidth": 0,
             "showPoints": "never",
             "stacking": {
               "mode": "normal"
-            },
-            "barAlignment": 0
-          }
-        }
+            }
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 24
+        "y": 28
       },
       "id": 63,
+      "interval": "1m",
       "options": {
         "legend": {
+          "calcs": [
+            "sum"
+          ],
           "displayMode": "table",
-          "placement": "bottom",
-          "calcs": ["sum"]
+          "placement": "bottom"
         },
         "tooltip": {
           "mode": "multi",
@@ -1062,17 +1298,16 @@
       },
       "targets": [
         {
-          "refId": "A",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "legendFormat": "{{model}}",
           "expr": "{service_name=~\"${service:regex}\"} model:* | stats by (model) sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce | math (max(cu, 0) - max(sonnet_promo, 0) / 3 + max(ce, 0)) * ${eur_rate} as cost_eur | fields model, cost_eur",
-          "queryType": "statsRange"
+          "legendFormat": "{{model}}",
+          "queryType": "statsRange",
+          "refId": "A"
         }
       ],
-      "interval": "1m",
       "title": "Cost by Model",
       "type": "timeseries"
     },
@@ -1082,10 +1317,10 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 36
       },
       "id": 64,
-      "title": "Summary Stats",
+      "title": "All Agents — Summary Stats",
       "type": "row"
     },
     {
@@ -1097,42 +1332,44 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Tokens",
-          "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
-                "value": null
+                "color": "blue"
               }
             ]
-          }
-        }
+          },
+          "unit": "short"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 33
+        "y": 37
       },
       "id": 16,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
-          "refId": "A",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "instant": true,
           "expr": "{service_name=~\"${service:regex}\"} | stats sum(input_tokens) i_claude, sum(output_tokens) o_claude, sum(input_token_count) i_other, sum(output_token_count) o_other | math max(i_claude, 0) + max(o_claude, 0) + max(i_other, 0) + max(o_other, 0) as total_tokens | fields total_tokens",
-          "queryType": "stats"
+          "instant": true,
+          "queryType": "stats",
+          "refId": "A"
         }
       ],
       "title": "Total Tokens",
@@ -1147,13 +1384,11 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Errors",
-          "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "yellow",
@@ -1164,33 +1399,38 @@
                 "value": 5
               }
             ]
-          }
-        }
+          },
+          "unit": "short"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 33
+        "y": 37
       },
       "id": 17,
       "options": {
-        "reduceOptions": {
-          "calcs": ["sum"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats count() if (\"claude_code.api_error\") e1, count() if (event_name:~\"codex[.].*error|gemini_cli[.].*error\") e2 | math e1 + e2 as errors | fields errors",
           "instant": true,
           "legendFormat": "Errors",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "title": "API Errors",
@@ -1205,42 +1445,45 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "User Prompts",
-          "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "purple",
-                "value": null
+                "color": "purple"
               }
             ]
-          }
-        }
+          },
+          "unit": "short"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 33
+        "y": 37
       },
       "id": 19,
       "options": {
-        "reduceOptions": {
-          "calcs": ["sum"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats count() if (\"claude_code.user_prompt\") p1, count() if (event_name:=\"codex.user_prompt\") p2, count() if (event_name:=\"gemini_cli.user_prompt\") p3 | math p1 + p2 + p3 as prompts | fields prompts",
           "instant": true,
           "legendFormat": "User Prompts",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "title": "User Prompts",
@@ -1255,13 +1498,11 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Max Duration",
-          "unit": "ms",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "yellow",
@@ -1272,33 +1513,38 @@
                 "value": 60000
               }
             ]
-          }
-        }
+          },
+          "unit": "ms"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 33
+        "y": 37
       },
       "id": 21,
       "options": {
-        "reduceOptions": {
-          "calcs": ["max"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "max"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} duration_ms:* | stats max(duration_ms) max_ms | fields max_ms",
           "instant": true,
           "legendFormat": "Max Duration",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "title": "Max Request Duration",
@@ -1313,42 +1559,45 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Cost / Request",
-          "unit": "currencyEUR",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
-          }
-        }
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 33
+        "y": 37
       },
       "id": 22,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce, count() if (\"claude_code.api_request\") r1, count() if (event_name:=\"codex.websocket_request\") r2, count() if (event_name:=\"gemini_cli.api_request\") r3 | math ((max(cu, 0) - max(sonnet_promo, 0) / 3 + max(ce, 0)) / (r1 + r2 + r3)) * ${eur_rate} as cost_per_request | fields cost_per_request",
           "instant": true,
           "legendFormat": "Cost / Request",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "title": "Cost / Request",
@@ -1363,42 +1612,45 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Cost / 1K Tokens",
-          "unit": "currencyEUR",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
-          }
-        }
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 33
+        "y": 37
       },
       "id": 23,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce, sum(input_tokens) in_tok, sum(output_tokens) out_tok, sum(input_token_count) in_tok_c, sum(output_token_count) out_tok_c | math (1000 * (max(cu, 0) - max(sonnet_promo, 0) / 3 + max(ce, 0)) / (max(in_tok,0) + max(out_tok,0) + max(in_tok_c,0) + max(out_tok_c,0))) * ${eur_rate} as cost_per_1k | fields cost_per_1k",
           "instant": true,
           "legendFormat": "Cost / 1K Tokens",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "title": "Cost / 1K Tokens",
@@ -1413,37 +1665,44 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Active Time",
-          "unit": "s",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
-                "value": null
+                "color": "blue"
               }
             ]
-          }
-        }
+          },
+          "unit": "s"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 37
+        "y": 41
       },
       "id": 65,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
           "expr": "sum(claude_code_active_time_seconds_total)",
+          "instant": true,
           "legendFormat": "Active Time",
-          "instant": true
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          }
         }
       ],
       "title": "Claude Active Time",
@@ -1458,37 +1717,44 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Sessions",
-          "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "purple",
-                "value": null
+                "color": "purple"
               }
             ]
-          }
-        }
+          },
+          "unit": "short"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 37
+        "y": 41
       },
       "id": 66,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
           "expr": "sum(claude_code_session_count_total)",
+          "instant": true,
           "legendFormat": "Sessions",
-          "instant": true
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          }
         }
       ],
       "title": "Claude Sessions",
@@ -1503,13 +1769,11 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Cache Hit Rate",
-          "unit": "percent",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
-                "value": null
+                "color": "red"
               },
               {
                 "color": "yellow",
@@ -1520,33 +1784,38 @@
                 "value": 95
               }
             ]
-          }
-        }
+          },
+          "unit": "percent"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 37
+        "y": 41
       },
       "id": 67,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats sum(cache_read_tokens) r, sum(cache_creation_tokens) c | math 100 * max(r,0) / (max(r,0) + max(c,0)) as cache_hit_pct | fields cache_hit_pct",
           "instant": true,
           "legendFormat": "Cache Hit Rate",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "title": "Cache Hit Rate",
@@ -1560,44 +1829,47 @@
       "description": "Ratio of output tokens to input tokens. Higher means more verbose responses.",
       "fieldConfig": {
         "defaults": {
-          "displayName": "Output / Input",
-          "unit": "short",
           "decimals": 2,
+          "displayName": "Output / Input",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "super-light-blue",
-                "value": null
+                "color": "super-light-blue"
               }
             ]
-          }
-        }
+          },
+          "unit": "short"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 37
+        "y": 41
       },
       "id": 68,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats sum(output_tokens) out_tok, sum(output_token_count) out_tok_c, sum(input_tokens) in_tok, sum(input_token_count) in_tok_c | math (max(out_tok,0) + max(out_tok_c,0)) / (max(in_tok,0) + max(in_tok_c,0)) as out_in_ratio | fields out_in_ratio",
           "instant": true,
           "legendFormat": "Output / Input",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "title": "Output / Input Ratio",
@@ -1612,42 +1884,45 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Events",
-          "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-blue",
-                "value": null
+                "color": "dark-blue"
               }
             ]
-          }
-        }
+          },
+          "unit": "short"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 37
+        "y": 41
       },
       "id": 69,
       "options": {
-        "reduceOptions": {
-          "calcs": ["sum"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats count() events | fields events",
           "instant": true,
           "legendFormat": "Events",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "title": "Total Events",
@@ -1662,13 +1937,11 @@
       "fieldConfig": {
         "defaults": {
           "displayName": "Cost / Prompt",
-          "unit": "currencyEUR",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "yellow",
@@ -1679,33 +1952,38 @@
                 "value": 5
               }
             ]
-          }
-        }
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 37
+        "y": 41
       },
       "id": 70,
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"]
-        },
         "colorMode": "value",
-        "graphMode": "area"
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
           "expr": "{service_name=~\"${service:regex}\"} | stats sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce, count() if (\"claude_code.user_prompt\") p1, count() if (event_name:=\"codex.user_prompt\") p2, count() if (event_name:=\"gemini_cli.user_prompt\") p3 | math ((max(cu, 0) - max(sonnet_promo, 0) / 3 + max(ce, 0)) / (p1 + p2 + p3)) * ${eur_rate} as cost_per_prompt | fields cost_per_prompt",
           "instant": true,
           "legendFormat": "Cost / Prompt",
           "queryType": "stats",
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "victorialogs"
-          }
+          "refId": "A"
         }
       ],
       "title": "Cost / Prompt",
@@ -1717,7 +1995,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 41
+        "y": 45
       },
       "id": 24,
       "panels": [
@@ -1731,18 +2009,18 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 41
+            "y": 45
           },
           "id": 25,
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} ~\"api_error|error_message|error_type\"",
-              "legendFormat": "",
-              "queryType": "instant",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} ~\"api_error|error_message|error_type\"",
+              "legendFormat": "",
+              "queryType": "instant"
             }
           ],
           "title": "API Error Events",
@@ -1756,68 +2034,73 @@
           "description": "API request distribution across CLI tools.",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
               "color": {
                 "mode": "palette-classic"
-              }
+              },
+              "unit": "short"
             }
           },
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 41
+            "y": 45
           },
           "id": 26,
           "options": {
-            "reduceOptions": {
-              "calcs": ["lastNotNull"]
-            },
-            "pieType": "donut",
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            },
             "legend": {
               "displayMode": "table",
               "placement": "right",
-              "values": ["value", "percent"]
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
             }
           },
           "targets": [
             {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
               "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" | stats by (service_name) count() n",
               "legendFormat": "{{service_name}}",
-              "queryType": "stats",
+              "queryType": "stats"
+            },
+            {
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
-            },
-            {
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.websocket_request\" | stats by (service_name) count() n",
               "legendFormat": "{{service_name}}",
-              "queryType": "stats",
-              "datasource": {
-                "type": "victoriametrics-logs-datasource",
-                "uid": "victorialogs"
-              }
+              "queryType": "stats"
             },
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_request\" | stats by (service_name) count() n",
-              "legendFormat": "{{service_name}}",
-              "queryType": "stats",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_request\" | stats by (service_name) count() n",
+              "legendFormat": "{{service_name}}",
+              "queryType": "stats"
             }
           ],
           "title": "Requests by Service",
           "type": "piechart"
         }
       ],
-      "title": "Investigation & Comparison",
+      "title": "Cross-Agent Investigation & Comparison",
       "type": "row"
     },
     {
@@ -1826,10 +2109,346 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 49
+        "y": 53
       },
       "id": 100,
       "panels": [
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Claude Code API-equivalent cost over the selected range from immutable API request events, using native cost and the existing Sonnet 5 introductory-price adjustment.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "Cost",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 50
+                  },
+                  {
+                    "color": "red",
+                    "value": 200
+                  }
+                ]
+              },
+              "unit": "currencyEUR"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 0,
+            "y": 54
+          },
+          "id": 107,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"claude_code.api_request\" | stats sum(cost_usd) cost, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo | math (max(cost, 0) - max(sonnet_promo, 0) / 3) * ${eur_rate} as cost_eur | fields cost_eur",
+              "instant": true,
+              "legendFormat": "Cost",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "API-Equivalent Cost",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Claude Code API request events over the selected range.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "API Requests",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue"
+                  }
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 4,
+            "y": 54
+          },
+          "id": 108,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "sum"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"claude_code.api_request\" | stats count() requests | fields requests",
+              "instant": true,
+              "legendFormat": "API Requests",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "API Requests",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Claude Code API error events as a percentage of its API request events.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "Error Rate",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
+                  }
+                ]
+              },
+              "unit": "percent"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 8,
+            "y": 54
+          },
+          "id": 109,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} | stats count() if (event_name:=\"claude_code.api_error\") errors, count() if (event_name:=\"claude_code.api_request\") requests | math 100 * errors / requests as error_pct | fields error_pct",
+              "instant": true,
+              "legendFormat": "Error Rate",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "Error Rate",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Claude Code 95th-percentile request duration over the selected range.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "p95",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 10000
+                  },
+                  {
+                    "color": "red",
+                    "value": 30000
+                  }
+                ]
+              },
+              "unit": "ms"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 12,
+            "y": 54
+          },
+          "id": 110,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"claude_code.api_request\" duration_ms:* | stats quantile(0.95, duration_ms) p95 | fields p95",
+              "instant": true,
+              "legendFormat": "p95",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "P95 Request Duration",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Claude Code input plus output tokens divided by API request events.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "Tokens / Request",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "super-light-blue"
+                  }
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 16,
+            "y": 54
+          },
+          "id": 111,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} | stats sum(input_tokens) if (event_name:=\"claude_code.api_request\") input_tokens, sum(output_tokens) if (event_name:=\"claude_code.api_request\") output_tokens, count() if (event_name:=\"claude_code.api_request\") requests | math (max(input_tokens, 0) + max(output_tokens, 0)) / requests as tokens_per_request | fields tokens_per_request",
+              "instant": true,
+              "legendFormat": "Tokens / Request",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "Tokens / Request",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Claude Code tool-result events divided by API request events.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "Tool Events / Request",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "orange"
+                  }
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 20,
+            "y": 54
+          },
+          "id": 112,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} | stats count() if (event_name:=\"claude_code.tool_result\") tool_events, count() if (event_name:=\"claude_code.api_request\") requests | math tool_events / requests as tools_per_request | fields tools_per_request",
+              "instant": true,
+              "legendFormat": "Tool Events / Request",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "Tool Events / Request",
+          "type": "stat"
+        },
         {
           "datasource": {
             "type": "victoriametrics-logs-datasource",
@@ -1839,8 +2458,8 @@
           "fieldConfig": {
             "defaults": {
               "custom": {
-                "fillOpacity": 10,
                 "drawStyle": "line",
+                "fillOpacity": 10,
                 "lineInterpolation": "smooth",
                 "lineWidth": 2,
                 "showPoints": "auto"
@@ -1852,9 +2471,10 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 50
+            "y": 58
           },
           "id": 101,
+          "interval": "1m",
           "options": {
             "legend": {
               "displayMode": "list",
@@ -1867,12 +2487,15 @@
           },
           "targets": [
             {
-              "expr": "{service_name=\"claude-code\"} \"claude_code.api_request\" model:* | stats by (model) sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo | math (max(cu, 0) - max(sonnet_promo, 0) / 3) as cost_usd | fields model, cost_usd",
+              "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" model:* | stats by (model) sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo | math (max(cu, 0) - max(sonnet_promo, 0) / 3) as cost_usd | fields model, cost_usd",
               "legendFormat": "{{model}}",
-              "queryType": "statsRange"
+              "queryType": "statsRange",
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              }
             }
           ],
-          "interval": "1m",
           "title": "Claude Estimated Cost by Model",
           "type": "timeseries"
         },
@@ -1885,8 +2508,8 @@
           "fieldConfig": {
             "defaults": {
               "custom": {
-                "fillOpacity": 20,
                 "drawStyle": "line",
+                "fillOpacity": 20,
                 "lineInterpolation": "smooth",
                 "lineWidth": 2,
                 "showPoints": "auto",
@@ -1901,9 +2524,10 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 50
+            "y": 58
           },
           "id": 102,
+          "interval": "1m",
           "options": {
             "legend": {
               "displayMode": "list",
@@ -1916,27 +2540,42 @@
           },
           "targets": [
             {
-              "expr": "{service_name=\"claude-code\"} \"claude_code.api_request\" input_tokens:* | stats sum(input_tokens) input",
+              "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" input_tokens:* | stats sum(input_tokens) input",
               "legendFormat": "input",
-              "queryType": "statsRange"
+              "queryType": "statsRange",
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              }
             },
             {
-              "expr": "{service_name=\"claude-code\"} \"claude_code.api_request\" output_tokens:* | stats sum(output_tokens) output",
+              "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" output_tokens:* | stats sum(output_tokens) output",
               "legendFormat": "output",
-              "queryType": "statsRange"
+              "queryType": "statsRange",
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              }
             },
             {
-              "expr": "{service_name=\"claude-code\"} \"claude_code.api_request\" cache_read_tokens:* | stats sum(cache_read_tokens) cache_read",
+              "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" cache_read_tokens:* | stats sum(cache_read_tokens) cache_read",
               "legendFormat": "cacheRead",
-              "queryType": "statsRange"
+              "queryType": "statsRange",
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              }
             },
             {
-              "expr": "{service_name=\"claude-code\"} \"claude_code.api_request\" cache_creation_tokens:* | stats sum(cache_creation_tokens) cache_creation",
+              "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" cache_creation_tokens:* | stats sum(cache_creation_tokens) cache_creation",
               "legendFormat": "cacheCreation",
-              "queryType": "statsRange"
+              "queryType": "statsRange",
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              }
             }
           ],
-          "interval": "1m",
           "title": "Claude Tokens by Type",
           "type": "timeseries"
         },
@@ -1949,8 +2588,8 @@
           "fieldConfig": {
             "defaults": {
               "custom": {
-                "fillOpacity": 10,
                 "drawStyle": "line",
+                "fillOpacity": 10,
                 "lineInterpolation": "smooth",
                 "lineWidth": 2,
                 "showPoints": "auto"
@@ -1962,9 +2601,10 @@
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 58
+            "y": 66
           },
           "id": 103,
+          "interval": "1m",
           "options": {
             "legend": {
               "displayMode": "list",
@@ -1978,10 +2618,13 @@
           "targets": [
             {
               "expr": "sum by (type) (increase({__name__=~\"claude_code_lines_of_code.*_total\"}[$__interval]))",
-              "legendFormat": "{{type}}"
+              "legendFormat": "{{type}}",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "victoriametrics"
+              }
             }
           ],
-          "interval": "1m",
           "title": "Claude Lines of Code",
           "type": "timeseries"
         },
@@ -1993,38 +2636,47 @@
           "description": "Accept/reject split of Claude Code edit-tool permission decisions over the range.",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
               "color": {
                 "mode": "palette-classic"
-              }
+              },
+              "unit": "short"
             }
           },
           "gridPos": {
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 58
+            "y": 66
           },
           "id": 104,
           "options": {
-            "reduceOptions": {
-              "calcs": ["lastNotNull"]
-            },
-            "pieType": "donut",
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            },
             "legend": {
               "displayMode": "table",
               "placement": "right",
-              "values": ["value", "percent"]
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
             }
           },
           "targets": [
             {
               "expr": "sum by (decision) (increase({__name__=~\"claude_code_code_edit_tool_decision.*_total\"}[$__range]))",
-              "legendFormat": "{{decision}}"
+              "legendFormat": "{{decision}}",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "victoriametrics"
+              }
             }
           ],
           "title": "Claude Edit Decisions",
@@ -2039,8 +2691,8 @@
           "fieldConfig": {
             "defaults": {
               "custom": {
-                "fillOpacity": 10,
                 "drawStyle": "line",
+                "fillOpacity": 10,
                 "lineInterpolation": "smooth",
                 "lineWidth": 2,
                 "showPoints": "auto"
@@ -2052,9 +2704,10 @@
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 58
+            "y": 66
           },
           "id": 105,
+          "interval": "1m",
           "options": {
             "legend": {
               "displayMode": "list",
@@ -2068,14 +2721,21 @@
           "targets": [
             {
               "expr": "sum(increase({__name__=~\"claude_code_commit_count.*_total\"}[$__interval]))",
-              "legendFormat": "Commits"
+              "legendFormat": "Commits",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "victoriametrics"
+              }
             },
             {
               "expr": "sum(increase({__name__=~\"claude_code_pull_request_count.*_total\"}[$__interval]))",
-              "legendFormat": "Pull Requests"
+              "legendFormat": "Pull Requests",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "victoriametrics"
+              }
             }
           ],
-          "interval": "1m",
           "title": "Claude Commits & PRs",
           "type": "timeseries"
         },
@@ -2089,7 +2749,7 @@
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 66
+            "y": 74
           },
           "id": 106,
           "options": {
@@ -2104,12 +2764,12 @@
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:~\"claude_code[.](compaction|skill_activated|at_mention|mcp_server_connection|api_retries_exhausted|permission_mode_changed|tool_decision|plugin_installed|plugin_loaded|auth)\"",
-              "queryType": "instant",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:~\"claude_code[.](compaction|skill_activated|at_mention|mcp_server_connection|api_retries_exhausted|permission_mode_changed|tool_decision|plugin_installed|plugin_loaded|auth)\"",
+              "queryType": "instant"
             }
           ],
           "title": "Claude Code Events",
@@ -2125,10 +2785,346 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 50
+        "y": 54
       },
       "id": 40,
       "panels": [
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Codex API-equivalent cost over the selected range from completed response events, using native cost when emitted and the collector estimate otherwise.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "Cost",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 50
+                  },
+                  {
+                    "color": "red",
+                    "value": 200
+                  }
+                ]
+              },
+              "unit": "currencyEUR"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 0,
+            "y": 55
+          },
+          "id": 113,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.sse_event\" event_kind:=\"response.completed\" effective_cost_usd:* | stats sum(effective_cost_usd) cost | math max(cost, 0) * ${eur_rate} as cost_eur | fields cost_eur",
+              "instant": true,
+              "legendFormat": "Cost",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "API-Equivalent Cost",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Codex CLI API request events over the selected range.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "API Requests",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue"
+                  }
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 4,
+            "y": 55
+          },
+          "id": 114,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "sum"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.websocket_request\" | stats count() requests | fields requests",
+              "instant": true,
+              "legendFormat": "API Requests",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "API Requests",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Codex CLI API error events as a percentage of its API request events.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "Error Rate",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
+                  }
+                ]
+              },
+              "unit": "percent"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 8,
+            "y": 55
+          },
+          "id": 115,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} | stats count() if (event_name:~\"codex[.].*error\") errors, count() if (event_name:=\"codex.websocket_request\") requests | math 100 * errors / requests as error_pct | fields error_pct",
+              "instant": true,
+              "legendFormat": "Error Rate",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "Error Rate",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Codex CLI 95th-percentile request duration over the selected range.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "p95",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 10000
+                  },
+                  {
+                    "color": "red",
+                    "value": 30000
+                  }
+                ]
+              },
+              "unit": "ms"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 12,
+            "y": 55
+          },
+          "id": 116,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.websocket_request\" duration_ms:* | stats quantile(0.95, duration_ms) p95 | fields p95",
+              "instant": true,
+              "legendFormat": "p95",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "P95 Request Duration",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Codex CLI input plus output tokens divided by API request events.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "Tokens / Request",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "super-light-blue"
+                  }
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 16,
+            "y": 55
+          },
+          "id": 117,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} | stats sum(input_token_count) if (event_name:=\"codex.sse_event\" AND event_kind:=\"response.completed\") input_tokens, sum(output_token_count) if (event_name:=\"codex.sse_event\" AND event_kind:=\"response.completed\") output_tokens, count() if (event_name:=\"codex.websocket_request\") requests | math (max(input_tokens, 0) + max(output_tokens, 0)) / requests as tokens_per_request | fields tokens_per_request",
+              "instant": true,
+              "legendFormat": "Tokens / Request",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "Tokens / Request",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Codex CLI tool-result events divided by API request events.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "Tool Events / Request",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "orange"
+                  }
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 20,
+            "y": 55
+          },
+          "id": 118,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} | stats count() if (event_name:=\"codex.tool_result\") tool_events, count() if (event_name:=\"codex.websocket_request\") requests | math tool_events / requests as tools_per_request | fields tools_per_request",
+              "instant": true,
+              "legendFormat": "Tool Events / Request",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "Tool Events / Request",
+          "type": "stat"
+        },
         {
           "datasource": {
             "type": "victoriametrics-logs-datasource",
@@ -2138,8 +3134,8 @@
           "fieldConfig": {
             "defaults": {
               "custom": {
-                "fillOpacity": 10,
                 "drawStyle": "line",
+                "fillOpacity": 10,
                 "lineInterpolation": "smooth",
                 "lineWidth": 2,
                 "showPoints": "auto"
@@ -2151,7 +3147,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 51
+            "y": 59
           },
           "id": 41,
           "options": {
@@ -2166,67 +3162,67 @@
           },
           "targets": [
             {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.conversation_starts\" | stats count() n",
               "legendFormat": "Conversation Starts",
-              "queryType": "statsRange",
+              "queryType": "statsRange"
+            },
+            {
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
-            },
-            {
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.websocket_connect\" | stats count() n",
               "legendFormat": "WebSocket Connect",
-              "queryType": "statsRange",
+              "queryType": "statsRange"
+            },
+            {
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
-            },
-            {
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.websocket_request\" | stats count() n",
               "legendFormat": "WebSocket Request",
-              "queryType": "statsRange",
+              "queryType": "statsRange"
+            },
+            {
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
-            },
-            {
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.websocket_event\" | stats count() n",
               "legendFormat": "WebSocket Event",
-              "queryType": "statsRange",
+              "queryType": "statsRange"
+            },
+            {
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
-            },
-            {
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.sse_event\" event_kind:=\"response.completed\" | stats count() n",
               "legendFormat": "Responses Completed",
-              "queryType": "statsRange",
+              "queryType": "statsRange"
+            },
+            {
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
-            },
-            {
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.tool_result\" | stats count() n",
               "legendFormat": "Tool Results",
-              "queryType": "statsRange",
-              "datasource": {
-                "type": "victoriametrics-logs-datasource",
-                "uid": "victorialogs"
-              }
+              "queryType": "statsRange"
             },
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.auth_recovery\" | stats count() n",
-              "legendFormat": "Auth Recovery",
-              "queryType": "statsRange",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.auth_recovery\" | stats count() n",
+              "legendFormat": "Auth Recovery",
+              "queryType": "statsRange"
             }
           ],
           "title": "Codex Lifecycle Activity",
@@ -2240,43 +3236,48 @@
           "description": "Request distribution by Codex model over the selected range.",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
               "color": {
                 "mode": "palette-classic"
-              }
+              },
+              "unit": "short"
             }
           },
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 51
+            "y": 59
           },
           "id": 75,
           "options": {
-            "reduceOptions": {
-              "calcs": ["lastNotNull"]
-            },
-            "pieType": "donut",
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            },
             "legend": {
               "displayMode": "table",
               "placement": "right",
-              "values": ["value", "percent"]
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
             }
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.websocket_request\" model:* | stats by (model) count() n",
-              "legendFormat": "{{model}}",
-              "queryType": "stats",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.websocket_request\" model:* | stats by (model) count() n",
+              "legendFormat": "{{model}}",
+              "queryType": "stats"
             }
           ],
           "title": "Codex Requests by Model",
@@ -2290,52 +3291,57 @@
           "description": "Session source split from Codex conversation start events.",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
               "color": {
                 "mode": "palette-classic"
-              }
+              },
+              "unit": "short"
             }
           },
           "gridPos": {
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 59
+            "y": 67
           },
           "id": 76,
           "options": {
-            "reduceOptions": {
-              "calcs": ["lastNotNull"]
-            },
-            "pieType": "donut",
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            },
             "legend": {
               "displayMode": "table",
               "placement": "right",
-              "values": ["value", "percent"]
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
             }
           },
           "targets": [
             {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.conversation_starts\" session_source:* | stats by (session_source) count() n",
               "legendFormat": "{{session_source}}",
-              "queryType": "stats",
-              "datasource": {
-                "type": "victoriametrics-logs-datasource",
-                "uid": "victorialogs"
-              }
+              "queryType": "stats"
             },
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.conversation_starts\" | stats count() total, count() if (session_source:*) known | math total - known as unknown | fields unknown",
-              "legendFormat": "unknown",
-              "queryType": "stats",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.conversation_starts\" | stats count() total, count() if (session_source:*) known | math total - known as unknown | fields unknown",
+              "legendFormat": "unknown",
+              "queryType": "stats"
             }
           ],
           "title": "Codex Session Source",
@@ -2349,43 +3355,48 @@
           "description": "Originator split from Codex conversation start events.",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
               "color": {
                 "mode": "palette-classic"
-              }
+              },
+              "unit": "short"
             }
           },
           "gridPos": {
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 59
+            "y": 67
           },
           "id": 77,
           "options": {
-            "reduceOptions": {
-              "calcs": ["lastNotNull"]
-            },
-            "pieType": "donut",
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            },
             "legend": {
               "displayMode": "table",
               "placement": "right",
-              "values": ["value", "percent"]
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
             }
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.conversation_starts\" originator:* | stats by (originator) count() n",
-              "legendFormat": "{{originator}}",
-              "queryType": "stats",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.conversation_starts\" originator:* | stats by (originator) count() n",
+              "legendFormat": "{{originator}}",
+              "queryType": "stats"
             }
           ],
           "title": "Codex Originator",
@@ -2399,43 +3410,48 @@
           "description": "Authentication mode split from Codex conversation start events.",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
               "color": {
                 "mode": "palette-classic"
-              }
+              },
+              "unit": "short"
             }
           },
           "gridPos": {
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 59
+            "y": 67
           },
           "id": 78,
           "options": {
-            "reduceOptions": {
-              "calcs": ["lastNotNull"]
-            },
-            "pieType": "donut",
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            },
             "legend": {
               "displayMode": "table",
               "placement": "right",
-              "values": ["value", "percent"]
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
             }
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.conversation_starts\" auth_mode:* | stats by (auth_mode) count() n",
-              "legendFormat": "{{auth_mode}}",
-              "queryType": "stats",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.conversation_starts\" auth_mode:* | stats by (auth_mode) count() n",
+              "legendFormat": "{{auth_mode}}",
+              "queryType": "stats"
             }
           ],
           "title": "Codex Auth Mode",
@@ -2449,43 +3465,48 @@
           "description": "Whether Codex spend is native, estimated, or unsupported on completed responses.",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
               "color": {
                 "mode": "palette-classic"
-              }
+              },
+              "unit": "short"
             }
           },
           "gridPos": {
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 59
+            "y": 67
           },
           "id": 79,
           "options": {
-            "reduceOptions": {
-              "calcs": ["lastNotNull"]
-            },
-            "pieType": "donut",
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            },
             "legend": {
               "displayMode": "table",
               "placement": "right",
-              "values": ["value", "percent"]
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
             }
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.sse_event\" event_kind:=\"response.completed\" cost_source:* | stats by (cost_source) count() n",
-              "legendFormat": "{{cost_source}}",
-              "queryType": "stats",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.sse_event\" event_kind:=\"response.completed\" cost_source:* | stats by (cost_source) count() n",
+              "legendFormat": "{{cost_source}}",
+              "queryType": "stats"
             }
           ],
           "title": "Codex Cost Source",
@@ -2499,43 +3520,48 @@
           "description": "Top MCP servers seen in Codex tool results.",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
               "color": {
                 "mode": "palette-classic"
-              }
+              },
+              "unit": "short"
             }
           },
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 67
+            "y": 75
           },
           "id": 80,
           "options": {
-            "reduceOptions": {
-              "calcs": ["lastNotNull"]
-            },
-            "pieType": "donut",
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            },
             "legend": {
               "displayMode": "table",
               "placement": "right",
-              "values": ["value", "percent"]
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
             }
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.tool_result\" mcp_server:* | stats by (mcp_server) count() hits | sort by (hits desc) | limit 10",
-              "legendFormat": "{{mcp_server}}",
-              "queryType": "stats",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.tool_result\" mcp_server:* | stats by (mcp_server) count() hits | sort by (hits desc) | limit 10",
+              "legendFormat": "{{mcp_server}}",
+              "queryType": "stats"
             }
           ],
           "title": "Codex MCP Servers",
@@ -2549,43 +3575,48 @@
           "description": "Most frequent Codex tools over the selected range.",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
               "color": {
                 "mode": "palette-classic"
-              }
+              },
+              "unit": "short"
             }
           },
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 67
+            "y": 75
           },
           "id": 81,
           "options": {
-            "reduceOptions": {
-              "calcs": ["lastNotNull"]
-            },
-            "pieType": "donut",
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            },
             "legend": {
               "displayMode": "table",
               "placement": "right",
-              "values": ["value", "percent"]
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
             }
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.tool_result\" tool_name:* | stats by (tool_name) count() hits | sort by (hits desc) | limit 10",
-              "legendFormat": "{{tool_name}}",
-              "queryType": "stats",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"codex.tool_result\" tool_name:* | stats by (tool_name) count() hits | sort by (hits desc) | limit 10",
+              "legendFormat": "{{tool_name}}",
+              "queryType": "stats"
             }
           ],
           "title": "Codex Tool Results",
@@ -2601,7 +3632,7 @@
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 75
+            "y": 83
           },
           "id": 82,
           "options": {
@@ -2616,12 +3647,12 @@
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:~\"codex[.](conversation_starts|auth_recovery)\"",
-              "queryType": "instant",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:~\"codex[.](conversation_starts|auth_recovery)\"",
+              "queryType": "instant"
             }
           ],
           "title": "Codex Session Events",
@@ -2637,15 +3668,352 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 51
+        "y": 55
       },
       "id": 83,
       "panels": [
         {
           "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Gemini API-equivalent cost over the selected range from API response events, using collector estimates for supported models.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "Cost",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 50
+                  },
+                  {
+                    "color": "red",
+                    "value": 200
+                  }
+                ]
+              },
+              "unit": "currencyEUR"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 0,
+            "y": 56
+          },
+          "id": 119,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" effective_cost_usd:* | stats sum(effective_cost_usd) cost | math max(cost, 0) * ${eur_rate} as cost_eur | fields cost_eur",
+              "instant": true,
+              "legendFormat": "Cost",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "API-Equivalent Cost",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Gemini CLI API request events over the selected range.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "API Requests",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue"
+                  }
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 4,
+            "y": 56
+          },
+          "id": 120,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "sum"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_request\" | stats count() requests | fields requests",
+              "instant": true,
+              "legendFormat": "API Requests",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "API Requests",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Gemini CLI API error events as a percentage of its API request events.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "Error Rate",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
+                  }
+                ]
+              },
+              "unit": "percent"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 8,
+            "y": 56
+          },
+          "id": 121,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} | stats count() if (event_name:~\"gemini_cli[.].*error\") errors, count() if (event_name:=\"gemini_cli.api_request\") requests | math 100 * errors / requests as error_pct | fields error_pct",
+              "instant": true,
+              "legendFormat": "Error Rate",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "Error Rate",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Gemini CLI 95th-percentile request duration over the selected range.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "p95",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 10000
+                  },
+                  {
+                    "color": "red",
+                    "value": 30000
+                  }
+                ]
+              },
+              "unit": "ms"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 12,
+            "y": 56
+          },
+          "id": 122,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" duration_ms:* | stats quantile(0.95, duration_ms) p95 | fields p95",
+              "instant": true,
+              "legendFormat": "p95",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "P95 Request Duration",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Gemini CLI input plus output tokens divided by API request events.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "Tokens / Request",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "super-light-blue"
+                  }
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 16,
+            "y": 56
+          },
+          "id": 123,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} | stats sum(input_token_count) if (event_name:=\"gemini_cli.api_response\") input_tokens, sum(output_token_count) if (event_name:=\"gemini_cli.api_response\") output_tokens, count() if (event_name:=\"gemini_cli.api_request\") requests | math (max(input_tokens, 0) + max(output_tokens, 0)) / requests as tokens_per_request | fields tokens_per_request",
+              "instant": true,
+              "legendFormat": "Tokens / Request",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "Tokens / Request",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "victorialogs"
+          },
+          "description": "Gemini CLI tool-call events divided by API request events.",
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "Tool Events / Request",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "orange"
+                  }
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 20,
+            "y": 56
+          },
+          "id": 124,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
+              "expr": "{service_name=~\"${service:regex}\"} | stats count() if (event_name:=\"gemini_cli.tool_call\") tool_events, count() if (event_name:=\"gemini_cli.api_request\") requests | math tool_events / requests as tools_per_request | fields tools_per_request",
+              "instant": true,
+              "legendFormat": "Tool Events / Request",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "Tool Events / Request",
+          "type": "stat"
+        },
+        {
+          "datasource": {
             "type": "prometheus",
             "uid": "victoriametrics"
           },
+          "description": "Token usage broken down by type (input, output) from Prometheus metrics.",
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -2661,13 +4029,14 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 67
+            "y": 76
           },
           "id": 31,
-          "description": "Token usage broken down by type (input, output) from Prometheus metrics.",
           "options": {
             "legend": {
-              "calcs": ["sum"],
+              "calcs": [
+                "sum"
+              ],
               "displayMode": "table",
               "placement": "bottom"
             }
@@ -2675,7 +4044,11 @@
           "targets": [
             {
               "expr": "sum by (gen_ai_token_type) (gen_ai_client_token_usage_sum)",
-              "legendFormat": "{{gen_ai_token_type}}"
+              "legendFormat": "{{gen_ai_token_type}}",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "victoriametrics"
+              }
             }
           ],
           "title": "Gemini Token Usage (Prometheus)",
@@ -2686,6 +4059,7 @@
             "type": "prometheus",
             "uid": "victoriametrics"
           },
+          "description": "Average API request latency from Prometheus histogram metrics.",
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -2698,10 +4072,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 67
+            "y": 76
           },
           "id": 32,
-          "description": "Average API request latency from Prometheus histogram metrics.",
           "options": {
             "legend": {
               "displayMode": "list",
@@ -2711,7 +4084,11 @@
           "targets": [
             {
               "expr": "sum(gemini_cli_api_request_latency_milliseconds_sum) / sum(gemini_cli_api_request_latency_milliseconds_count)",
-              "legendFormat": "avg latency"
+              "legendFormat": "avg latency",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "victoriametrics"
+              }
             }
           ],
           "title": "Gemini API Latency (Prometheus)",
@@ -2726,8 +4103,8 @@
           "fieldConfig": {
             "defaults": {
               "custom": {
-                "fillOpacity": 10,
                 "drawStyle": "line",
+                "fillOpacity": 10,
                 "lineInterpolation": "smooth",
                 "lineWidth": 2,
                 "showPoints": "auto"
@@ -2739,7 +4116,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 51
+            "y": 60
           },
           "id": 84,
           "options": {
@@ -2754,49 +4131,49 @@
           },
           "targets": [
             {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" | stats count() n",
               "legendFormat": "API Responses",
-              "queryType": "statsRange",
+              "queryType": "statsRange"
+            },
+            {
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
-            },
-            {
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_request\" | stats count() n",
               "legendFormat": "API Requests",
-              "queryType": "statsRange",
+              "queryType": "statsRange"
+            },
+            {
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
-            },
-            {
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.tool_call\" | stats count() n",
               "legendFormat": "Tool Calls",
-              "queryType": "statsRange",
+              "queryType": "statsRange"
+            },
+            {
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
-            },
-            {
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.user_prompt\" | stats count() n",
               "legendFormat": "User Prompts",
-              "queryType": "statsRange",
-              "datasource": {
-                "type": "victoriametrics-logs-datasource",
-                "uid": "victorialogs"
-              }
+              "queryType": "statsRange"
             },
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:~\"gemini_cli[.].*error\" | stats count() n",
-              "legendFormat": "Errors",
-              "queryType": "statsRange",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:~\"gemini_cli[.].*error\" | stats count() n",
+              "legendFormat": "Errors",
+              "queryType": "statsRange"
             }
           ],
           "title": "Gemini Lifecycle Activity",
@@ -2810,43 +4187,48 @@
           "description": "Request distribution by Gemini model over the selected range.",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
               "color": {
                 "mode": "palette-classic"
-              }
+              },
+              "unit": "short"
             }
           },
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 51
+            "y": 60
           },
           "id": 85,
           "options": {
-            "reduceOptions": {
-              "calcs": ["lastNotNull"]
-            },
-            "pieType": "donut",
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            },
             "legend": {
               "displayMode": "table",
               "placement": "right",
-              "values": ["value", "percent"]
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
             }
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" model:* | stats by (model) count() n",
-              "legendFormat": "{{model}}",
-              "queryType": "stats",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" model:* | stats by (model) count() n",
+              "legendFormat": "{{model}}",
+              "queryType": "stats"
             }
           ],
           "title": "Gemini Requests by Model",
@@ -2860,43 +4242,48 @@
           "description": "Whether Gemini spend is estimated or unsupported on API response events.",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
               "color": {
                 "mode": "palette-classic"
-              }
+              },
+              "unit": "short"
             }
           },
           "gridPos": {
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 59
+            "y": 68
           },
           "id": 86,
           "options": {
-            "reduceOptions": {
-              "calcs": ["lastNotNull"]
-            },
-            "pieType": "donut",
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            },
             "legend": {
               "displayMode": "table",
               "placement": "right",
-              "values": ["value", "percent"]
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
             }
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" cost_source:* | stats by (cost_source) count() n",
-              "legendFormat": "{{cost_source}}",
-              "queryType": "stats",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" cost_source:* | stats by (cost_source) count() n",
+              "legendFormat": "{{cost_source}}",
+              "queryType": "stats"
             }
           ],
           "title": "Gemini Cost Source",
@@ -2910,43 +4297,48 @@
           "description": "Most frequently used tools in Gemini CLI tool call events.",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
               "color": {
                 "mode": "palette-classic"
-              }
+              },
+              "unit": "short"
             }
           },
           "gridPos": {
             "h": 8,
             "w": 6,
-            "x": 6,
-            "y": 59
+            "x": 18,
+            "y": 68
           },
           "id": 87,
           "options": {
-            "reduceOptions": {
-              "calcs": ["lastNotNull"]
-            },
-            "pieType": "donut",
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            },
             "legend": {
               "displayMode": "table",
               "placement": "right",
-              "values": ["value", "percent"]
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
             }
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.tool_call\" tool_name:* | stats by (tool_name) count() hits | sort by (hits desc) | limit 10",
-              "legendFormat": "{{tool_name}}",
-              "queryType": "stats",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.tool_call\" tool_name:* | stats by (tool_name) count() hits | sort by (hits desc) | limit 10",
+              "legendFormat": "{{tool_name}}",
+              "queryType": "stats"
             }
           ],
           "title": "Gemini Top Tools",
@@ -2961,8 +4353,8 @@
           "fieldConfig": {
             "defaults": {
               "custom": {
-                "fillOpacity": 20,
                 "drawStyle": "bars",
+                "fillOpacity": 20,
                 "lineWidth": 0,
                 "stacking": {
                   "mode": "normal"
@@ -2974,15 +4366,17 @@
           "gridPos": {
             "h": 8,
             "w": 6,
-            "x": 12,
-            "y": 59
+            "x": 6,
+            "y": 68
           },
           "id": 88,
           "options": {
             "legend": {
+              "calcs": [
+                "sum"
+              ],
               "displayMode": "table",
-              "placement": "bottom",
-              "calcs": ["sum"]
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi",
@@ -2991,13 +4385,13 @@
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" cost_source:=\"estimated\" effective_cost_usd:* model:* | stats by (model) sum(effective_cost_usd) c | math max(c,0) * ${eur_rate} as cost_eur | fields model, cost_eur",
-              "legendFormat": "{{model}}",
-              "queryType": "statsRange",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" cost_source:=\"estimated\" effective_cost_usd:* model:* | stats by (model) sum(effective_cost_usd) c | math max(c,0) * ${eur_rate} as cost_eur | fields model, cost_eur",
+              "legendFormat": "{{model}}",
+              "queryType": "statsRange"
             }
           ],
           "title": "Gemini Cost by Model",
@@ -3012,8 +4406,8 @@
           "fieldConfig": {
             "defaults": {
               "custom": {
-                "fillOpacity": 10,
                 "drawStyle": "line",
+                "fillOpacity": 10,
                 "lineInterpolation": "smooth",
                 "lineWidth": 2,
                 "showPoints": "auto"
@@ -3024,8 +4418,8 @@
           "gridPos": {
             "h": 8,
             "w": 6,
-            "x": 18,
-            "y": 59
+            "x": 12,
+            "y": 68
           },
           "id": 89,
           "options": {
@@ -3040,31 +4434,31 @@
           },
           "targets": [
             {
+              "datasource": {
+                "type": "victoriametrics-logs-datasource",
+                "uid": "victorialogs"
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" thoughts_token_count:* | stats sum(thoughts_token_count) thinking_tokens",
               "legendFormat": "Thinking Tokens",
-              "queryType": "statsRange",
+              "queryType": "statsRange"
+            },
+            {
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
-            },
-            {
+              },
               "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" input_token_count:* | stats sum(input_token_count) input_tokens",
               "legendFormat": "Input Tokens",
-              "queryType": "statsRange",
-              "datasource": {
-                "type": "victoriametrics-logs-datasource",
-                "uid": "victorialogs"
-              }
+              "queryType": "statsRange"
             },
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" output_token_count:* | stats sum(output_token_count) output_tokens",
-              "legendFormat": "Output Tokens",
-              "queryType": "statsRange",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"gemini_cli.api_response\" output_token_count:* | stats sum(output_token_count) output_tokens",
+              "legendFormat": "Output Tokens",
+              "queryType": "statsRange"
             }
           ],
           "title": "Gemini Token Breakdown",
@@ -3080,7 +4474,7 @@
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 75
+            "y": 84
           },
           "id": 90,
           "options": {
@@ -3095,12 +4489,12 @@
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} event_name:~\"gemini_cli[.].*\"",
-              "queryType": "instant",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} event_name:~\"gemini_cli[.].*\"",
+              "queryType": "instant"
             }
           ],
           "title": "Gemini Session Events",
@@ -3116,7 +4510,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 52
+        "y": 56
       },
       "id": 50,
       "panels": [
@@ -3130,18 +4524,18 @@
             "h": 10,
             "w": 12,
             "x": 0,
-            "y": 52
+            "y": 56
           },
           "id": 51,
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"}",
-              "legendFormat": "",
-              "queryType": "instant",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"}",
+              "legendFormat": "",
+              "queryType": "instant"
             }
           ],
           "title": "All Events",
@@ -3157,56 +4551,57 @@
             "h": 10,
             "w": 12,
             "x": 12,
-            "y": 52
+            "y": 56
           },
           "id": 52,
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} ~\"(?i)error\"",
-              "legendFormat": "",
-              "queryType": "instant",
               "datasource": {
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
-              }
+              },
+              "expr": "{service_name=~\"${service:regex}\"} ~\"(?i)error\"",
+              "legendFormat": "",
+              "queryType": "instant"
             }
           ],
           "title": "Errors Only",
           "type": "logs"
         }
       ],
-      "title": "Logs",
+      "title": "Cross-Agent Logs",
       "type": "row"
     }
   ],
   "refresh": "60s",
-  "schemaVersion": 39,
-  "tags": ["ai", "cli", "otel", "observability"],
+  "schemaVersion": 42,
+  "tags": [
+    "ai",
+    "cli",
+    "otel",
+    "observability"
+  ],
   "templating": {
     "list": [
       {
         "allValue": ".+",
-        "current": {
-          "selected": true,
-          "text": "All",
-          "value": "$__all"
-        },
+        "allowCustomValue": true,
+        "current": {},
         "datasource": {
           "type": "victoriametrics-logs-datasource",
           "uid": "victorialogs"
         },
         "definition": "label_values({service_name=~\".+\"}, service_name)",
-        "hide": 0,
         "includeAll": true,
         "label": "Service",
         "multi": true,
         "name": "service",
         "options": [],
         "query": {
-          "type": "fieldValue",
           "field": "service_name",
           "query": "service_name:*",
-          "refId": "VictoriaLogsVariableQueryEditor-VariableQuery"
+          "refId": "VictoriaLogsVariableQueryEditor-VariableQuery",
+          "type": "fieldValue"
         },
         "refresh": 2,
         "regex": "",
@@ -3214,19 +4609,60 @@
         "type": "query"
       },
       {
+        "description": "Epoch offset for the 5-hour credit reset cycle (anchor % 18000). Derived from a known reset at 2026-04-08T13:00:00Z. Adjust if the cycle shifts.",
+        "hide": 2,
+        "label": "Reset offset (s)",
+        "name": "reset_offset",
+        "query": "7200",
+        "skipUrlSync": true,
+        "type": "constant",
         "current": {
-          "selected": false,
-          "text": "0.876",
-          "value": "0.876"
+          "value": "7200",
+          "text": "7200",
+          "selected": false
         },
+        "options": [
+          {
+            "value": "7200",
+            "text": "7200",
+            "selected": false
+          }
+        ]
+      },
+      {
+        "description": "Epoch offset for the Codex 5-hour credit reset cycle (anchor % 18000). Mirrors CODEX_RESET_OFFSET_SECONDS in hermes-exporter.",
+        "hide": 2,
+        "label": "Codex reset offset (s)",
+        "name": "codex_reset_offset",
+        "query": "14100",
+        "skipUrlSync": true,
+        "type": "constant",
+        "current": {
+          "value": "14100",
+          "text": "14100",
+          "selected": false
+        },
+        "options": [
+          {
+            "value": "14100",
+            "text": "14100",
+            "selected": false
+          }
+        ]
+      },
+      {
+        "allowCustomValue": true,
+        "current": {},
         "datasource": {
           "type": "prometheus",
           "uid": "victoriametrics"
         },
         "description": "Live USD to EUR rate from exchange-rate exporter via Prometheus.",
         "hide": 2,
+        "includeAll": false,
         "label": "EUR rate",
         "name": "eur_rate",
+        "options": [],
         "query": "query_result(usd_eur_exchange_rate)",
         "refresh": 1,
         "regex": "/.*\\} (\\d+\\.\\d+) .*/",
@@ -3239,6 +4675,9 @@
     "from": "now-6h",
     "to": "now"
   },
-  "title": "AI CLI Tools - Overview",
-  "uid": "ai-cli-overview"
+  "timepicker": {},
+  "timezone": "",
+  "title": "AI CLI Tools — Overview",
+  "uid": "ai-cli-overview",
+  "weekStart": ""
 }

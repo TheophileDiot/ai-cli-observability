@@ -174,11 +174,15 @@ The main dashboard combines:
 - Pricing enrichment attributes added by the collector
 
 Traces are available through the provisioned VictoriaTraces datasource in
-Grafana Explore. The core dashboard has no dependency on account-specific
-credit schedules.
+Grafana Explore. The core dashboard also includes configurable Claude and
+Codex five-hour credit-reset countdowns. The hidden `reset_offset` and
+`codex_reset_offset` variables are UTC-midnight offsets in seconds; adjust
+their `7200` and `14100` defaults to match the account's reset anchors. These
+countdowns are local estimates, not provider telemetry.
 
 The optional [`extras/credit-resets`](extras/credit-resets/) dashboard expects
-a separate custom metric and stays outside automatic provisioning.
+a separate custom metric and stays outside automatic provisioning when exact
+exporter-provided reset timestamps are preferred.
 
 ### Publish on Grafana.com
 
