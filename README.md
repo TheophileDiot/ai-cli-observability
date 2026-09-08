@@ -263,6 +263,15 @@ docker compose down
 `docker compose down -v` permanently deletes this stack's local telemetry and
 Grafana state.
 
+## Related projects
+
+For Codex quotas and recent sessions in your GNOME panel, see
+[Codex Usage Monitor](https://github.com/TheophileDiot/Codex-Usage-Tracker-Linux).
+
+For Claude Code,
+[Claude Usage Tracker for Linux](https://github.com/TheophileDiot/Claude-Usage-Tracker-Linux)
+adds desktop quota monitoring and a customizable terminal statusline.
+
 ## Reference documentation
 
 - [Codex configuration reference](https://developers.openai.com/codex/config-reference/)
