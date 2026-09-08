@@ -51,7 +51,9 @@ This is the core of the repo and it spans three files.
 3. Grafana panels aggregate `effective_cost_usd` from VictoriaLogs and multiply by the
    `usd_eur_exchange_rate` gauge that the exporter also serves on `:9101`.
 
-Claude Code emits native cost, so no collector-side estimation exists for it.
+Claude Code emits native cost, so no collector-side estimation exists for it. Do not apply
+a second promotion multiplier in Grafana; Sonnet 5 retains its $2/$10 price. Match the
+`claude_code.api_request` event body because its `event.name` attribute is `api_request`.
 
 Every enriched record carries `cost_source` (`native` | `estimated` | `unsupported`) and a
 hardcoded `pricing_as_of` date string, so old telemetry stays interpretable when prices move.
@@ -61,8 +63,9 @@ Bump that date in `collector/config.yaml` when pricing rules change.
 
 - **Processor order in the logs pipeline is load-bearing.** `transform/vl_field_names` deletes
   `event.name` / `event.kind` / `service.name` after renaming them to underscore forms for
-  VictoriaLogs. It must stay *after* both enrichment processors, which match on the dotted names.
-- **OTTL rule order is load-bearing.** Codex tier rules go long-context → priority → standard;
+  VictoriaLogs. It must stay _after_ both enrichment processors, which match on the dotted names.
+- **OTTL rule order is load-bearing.** Legacy Codex tier rules go long-context → Fast/Priority → standard;
+  GPT-5.6/GPT-6 select model rates then apply cache-write, long-context, and tier multipliers;
   Gemini goes specific model → family fallback, with every later rule guarded by
   `cost_usd_estimated == nil` so specifics always win.
 - **Delta metrics are silently dropped** by `prometheusremotewrite`. Client configs must force
@@ -73,14 +76,14 @@ Bump that date in `collector/config.yaml` when pricing rules change.
 ### Adding a model price
 
 1. Add the env-var → `(litellm model key, provider, direction)` triple to `OTEL_ENV_MAP` in
-   `exporter.py`. If LiteLLM's pinned map lacks the model, add official list prices to
-   `OFFICIAL_PRICE_FALLBACKS` (fills only missing fields; marks source `openai-official`).
+   `exporter.py`. If LiteLLM's pinned map lacks the model or has stale rates, add verified official prices
+   to `OFFICIAL_PRICE_OVERRIDES` (overwrites pricing fields; marks source `<provider>-official`).
 2. Add OTTL rules in `collector/config.yaml` referencing `${file:/pricing/NEW_VAR}`, placed so
    ordering above holds.
 3. Extend `pricing-exporter/tests/test_pricing.py` —
    `test_every_otel_price_has_a_model_cost` already asserts every `OTEL_ENV_MAP` entry resolves.
-4. Rebuild: price files are only written at exporter startup and on refresh, so
-   `docker compose up -d --build` is required for the collector to see new files.
+4. Rebuild: price files are only written at exporter startup. Rebuild the exporter, wait for
+   health, then force-recreate the collector; it reads the files only at startup.
 
 ## Security
 

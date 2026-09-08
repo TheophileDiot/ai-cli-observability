@@ -69,7 +69,7 @@
         "type": "victoriametrics-logs-datasource",
         "uid": "victorialogs"
       },
-      "description": "Estimated API-equivalent spend since local midnight. Uses immutable request events and applies Claude Sonnet 5 introductory pricing to events before 2026-09-01.",
+      "description": "Estimated API-equivalent spend since local midnight. Uses immutable request events and preserves native Claude Code cost estimates.",
       "fieldConfig": {
         "defaults": {
           "displayName": "Estimated Cost",
@@ -116,7 +116,7 @@
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "expr": "{service_name=~\"${service:regex}\"} | stats sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce | math (max(cu, 0) - max(sonnet_promo, 0) / 3 + max(ce, 0)) * ${eur_rate} as cost_eur | fields cost_eur",
+          "expr": "{service_name=~\"${service:regex}\"} | stats sum(cost_usd) cu, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce | math (max(cu, 0) + max(ce, 0)) * ${eur_rate} as cost_eur | fields cost_eur",
           "instant": true,
           "legendFormat": "Estimated Cost",
           "queryType": "stats",
@@ -557,7 +557,7 @@
         "type": "victoriametrics-logs-datasource",
         "uid": "victorialogs"
       },
-      "description": "Estimated API-equivalent spend per interval from immutable request events, including the time-bounded Claude Sonnet 5 introductory price. Use Cost by Model below for the model breakdown.",
+      "description": "Estimated API-equivalent spend per interval from immutable request events; Claude Code uses native cost estimates. Use Cost by Model below for the model breakdown.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -601,7 +601,7 @@
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "expr": "{service_name=~\"${service:regex}\"} model:* | stats sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce | math (max(cu, 0) - max(sonnet_promo, 0) / 3 + max(ce, 0)) * ${eur_rate} as cost_eur | fields cost_eur",
+          "expr": "{service_name=~\"${service:regex}\"} model:* | stats sum(cost_usd) cu, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce | math (max(cu, 0) + max(ce, 0)) * ${eur_rate} as cost_eur | fields cost_eur",
           "legendFormat": "Estimated Cost",
           "queryType": "statsRange",
           "refId": "A"
@@ -1255,7 +1255,7 @@
         "type": "victoriametrics-logs-datasource",
         "uid": "victorialogs"
       },
-      "description": "Estimated API-equivalent cost by model from immutable request events, including the time-bounded Claude Sonnet 5 introductory price.",
+      "description": "Estimated API-equivalent cost by model from immutable request events; Claude Code uses native cost estimates.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1302,7 +1302,7 @@
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "expr": "{service_name=~\"${service:regex}\"} model:* | stats by (model) sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce | math (max(cu, 0) - max(sonnet_promo, 0) / 3 + max(ce, 0)) * ${eur_rate} as cost_eur | fields model, cost_eur",
+          "expr": "{service_name=~\"${service:regex}\"} model:* | stats by (model) sum(cost_usd) cu, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce | math (max(cu, 0) + max(ce, 0)) * ${eur_rate} as cost_eur | fields model, cost_eur",
           "legendFormat": "{{model}}",
           "queryType": "statsRange",
           "refId": "A"
@@ -1555,7 +1555,7 @@
         "type": "victoriametrics-logs-datasource",
         "uid": "victorialogs"
       },
-      "description": "Estimated API-equivalent spend divided by API requests, including the time-bounded Claude Sonnet 5 introductory price.",
+      "description": "Estimated API-equivalent spend divided by API requests; Claude Code uses native cost estimates.",
       "fieldConfig": {
         "defaults": {
           "displayName": "Cost / Request",
@@ -1593,7 +1593,7 @@
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "expr": "{service_name=~\"${service:regex}\"} | stats sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce, count() if (\"claude_code.api_request\") r1, count() if (event_name:=\"codex.websocket_request\") r2, count() if (event_name:=\"gemini_cli.api_request\") r3 | math ((max(cu, 0) - max(sonnet_promo, 0) / 3 + max(ce, 0)) / (r1 + r2 + r3)) * ${eur_rate} as cost_per_request | fields cost_per_request",
+          "expr": "{service_name=~\"${service:regex}\"} | stats sum(cost_usd) cu, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce, count() if (\"claude_code.api_request\") r1, count() if (event_name:=\"codex.websocket_request\") r2, count() if (event_name:=\"gemini_cli.api_request\") r3 | math ((max(cu, 0) + max(ce, 0)) / (r1 + r2 + r3)) * ${eur_rate} as cost_per_request | fields cost_per_request",
           "instant": true,
           "legendFormat": "Cost / Request",
           "queryType": "stats",
@@ -1608,7 +1608,7 @@
         "type": "victoriametrics-logs-datasource",
         "uid": "victorialogs"
       },
-      "description": "Estimated API-equivalent spend per 1K tokens, including the time-bounded Claude Sonnet 5 introductory price.",
+      "description": "Estimated API-equivalent spend per 1K tokens; Claude Code uses native cost estimates.",
       "fieldConfig": {
         "defaults": {
           "displayName": "Cost / 1K Tokens",
@@ -1646,7 +1646,7 @@
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "expr": "{service_name=~\"${service:regex}\"} | stats sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce, sum(input_tokens) in_tok, sum(output_tokens) out_tok, sum(input_token_count) in_tok_c, sum(output_token_count) out_tok_c | math (1000 * (max(cu, 0) - max(sonnet_promo, 0) / 3 + max(ce, 0)) / (max(in_tok,0) + max(out_tok,0) + max(in_tok_c,0) + max(out_tok_c,0))) * ${eur_rate} as cost_per_1k | fields cost_per_1k",
+          "expr": "{service_name=~\"${service:regex}\"} | stats sum(cost_usd) cu, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce, sum(input_tokens) in_tok, sum(output_tokens) out_tok, sum(input_token_count) in_tok_c, sum(output_token_count) out_tok_c | math (1000 * (max(cu, 0) + max(ce, 0)) / (max(in_tok,0) + max(out_tok,0) + max(in_tok_c,0) + max(out_tok_c,0))) * ${eur_rate} as cost_per_1k | fields cost_per_1k",
           "instant": true,
           "legendFormat": "Cost / 1K Tokens",
           "queryType": "stats",
@@ -1933,7 +1933,7 @@
         "type": "victoriametrics-logs-datasource",
         "uid": "victorialogs"
       },
-      "description": "Estimated API-equivalent cost per user prompt, including the time-bounded Claude Sonnet 5 introductory price.",
+      "description": "Estimated API-equivalent cost per user prompt; Claude Code uses native cost estimates.",
       "fieldConfig": {
         "defaults": {
           "displayName": "Cost / Prompt",
@@ -1979,7 +1979,7 @@
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "expr": "{service_name=~\"${service:regex}\"} | stats sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce, count() if (\"claude_code.user_prompt\") p1, count() if (event_name:=\"codex.user_prompt\") p2, count() if (event_name:=\"gemini_cli.user_prompt\") p3 | math ((max(cu, 0) - max(sonnet_promo, 0) / 3 + max(ce, 0)) / (p1 + p2 + p3)) * ${eur_rate} as cost_per_prompt | fields cost_per_prompt",
+          "expr": "{service_name=~\"${service:regex}\"} | stats sum(cost_usd) cu, sum(effective_cost_usd) if (cost_source:=\"estimated\") ce, count() if (\"claude_code.user_prompt\") p1, count() if (event_name:=\"codex.user_prompt\") p2, count() if (event_name:=\"gemini_cli.user_prompt\") p3 | math ((max(cu, 0) + max(ce, 0)) / (p1 + p2 + p3)) * ${eur_rate} as cost_per_prompt | fields cost_per_prompt",
           "instant": true,
           "legendFormat": "Cost / Prompt",
           "queryType": "stats",
@@ -2118,7 +2118,7 @@
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "description": "Claude Code API-equivalent cost over the selected range from immutable API request events, using native cost and the existing Sonnet 5 introductory-price adjustment.",
+          "description": "Claude Code API-equivalent cost over the selected range from immutable API request events, using native cost without an additional promotion multiplier.",
           "fieldConfig": {
             "defaults": {
               "displayName": "Cost",
@@ -2163,7 +2163,7 @@
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
               },
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"claude_code.api_request\" | stats sum(cost_usd) cost, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo | math (max(cost, 0) - max(sonnet_promo, 0) / 3) * ${eur_rate} as cost_eur | fields cost_eur",
+              "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" | stats sum(cost_usd) cost | math (max(cost, 0)) * ${eur_rate} as cost_eur | fields cost_eur",
               "instant": true,
               "legendFormat": "Cost",
               "queryType": "stats",
@@ -2215,7 +2215,7 @@
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
               },
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"claude_code.api_request\" | stats count() requests | fields requests",
+              "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" | stats count() requests | fields requests",
               "instant": true,
               "legendFormat": "API Requests",
               "queryType": "stats",
@@ -2275,7 +2275,7 @@
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
               },
-              "expr": "{service_name=~\"${service:regex}\"} | stats count() if (event_name:=\"claude_code.api_error\") errors, count() if (event_name:=\"claude_code.api_request\") requests | math 100 * errors / requests as error_pct | fields error_pct",
+              "expr": "{service_name=~\"${service:regex}\"} | stats count() if (\"claude_code.api_error\") errors, count() if (\"claude_code.api_request\") requests | math 100 * errors / requests as error_pct | fields error_pct",
               "instant": true,
               "legendFormat": "Error Rate",
               "queryType": "stats",
@@ -2335,7 +2335,7 @@
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
               },
-              "expr": "{service_name=~\"${service:regex}\"} event_name:=\"claude_code.api_request\" duration_ms:* | stats quantile(0.95, duration_ms) p95 | fields p95",
+              "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" duration_ms:* | stats quantile(0.95, duration_ms) p95 | fields p95",
               "instant": true,
               "legendFormat": "p95",
               "queryType": "stats",
@@ -2387,7 +2387,7 @@
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
               },
-              "expr": "{service_name=~\"${service:regex}\"} | stats sum(input_tokens) if (event_name:=\"claude_code.api_request\") input_tokens, sum(output_tokens) if (event_name:=\"claude_code.api_request\") output_tokens, count() if (event_name:=\"claude_code.api_request\") requests | math (max(input_tokens, 0) + max(output_tokens, 0)) / requests as tokens_per_request | fields tokens_per_request",
+              "expr": "{service_name=~\"${service:regex}\"} | stats sum(input_tokens) if (\"claude_code.api_request\") input_tokens, sum(output_tokens) if (\"claude_code.api_request\") output_tokens, count() if (\"claude_code.api_request\") requests | math (max(input_tokens, 0) + max(output_tokens, 0)) / requests as tokens_per_request | fields tokens_per_request",
               "instant": true,
               "legendFormat": "Tokens / Request",
               "queryType": "stats",
@@ -2439,7 +2439,7 @@
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
               },
-              "expr": "{service_name=~\"${service:regex}\"} | stats count() if (event_name:=\"claude_code.tool_result\") tool_events, count() if (event_name:=\"claude_code.api_request\") requests | math tool_events / requests as tools_per_request | fields tools_per_request",
+              "expr": "{service_name=~\"${service:regex}\"} | stats count() if (\"claude_code.tool_result\") tool_events, count() if (\"claude_code.api_request\") requests | math tool_events / requests as tools_per_request | fields tools_per_request",
               "instant": true,
               "legendFormat": "Tool Events / Request",
               "queryType": "stats",
@@ -2454,7 +2454,7 @@
             "type": "victoriametrics-logs-datasource",
             "uid": "victorialogs"
           },
-          "description": "Claude Code estimated API-equivalent cost per interval by model from immutable request events, including the time-bounded Sonnet 5 introductory price.",
+          "description": "Claude Code estimated API-equivalent cost per interval by model from immutable request events; Claude Code uses native cost estimates.",
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -2487,7 +2487,7 @@
           },
           "targets": [
             {
-              "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" model:* | stats by (model) sum(cost_usd) cu, sum(cost_usd) if (model:=\"claude-sonnet-5\" AND _time:<2026-09-01T00:00:00Z) sonnet_promo | math (max(cu, 0) - max(sonnet_promo, 0) / 3) as cost_usd | fields model, cost_usd",
+              "expr": "{service_name=~\"${service:regex}\"} \"claude_code.api_request\" model:* | stats by (model) sum(cost_usd) cu | math (max(cu, 0)) as cost_usd | fields model, cost_usd",
               "legendFormat": "{{model}}",
               "queryType": "statsRange",
               "datasource": {
@@ -2768,7 +2768,7 @@
                 "type": "victoriametrics-logs-datasource",
                 "uid": "victorialogs"
               },
-              "expr": "{service_name=~\"${service:regex}\"} event_name:~\"claude_code[.](compaction|skill_activated|at_mention|mcp_server_connection|api_retries_exhausted|permission_mode_changed|tool_decision|plugin_installed|plugin_loaded|auth)\"",
+              "expr": "{service_name=~\"${service:regex}\"} _msg:~\"claude_code[.](compaction|skill_activated|at_mention|mcp_server_connection|api_retries_exhausted|permission_mode_changed|tool_decision|plugin_installed|plugin_loaded|auth)\"",
               "queryType": "instant"
             }
           ],

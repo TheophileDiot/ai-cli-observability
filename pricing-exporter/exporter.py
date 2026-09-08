@@ -28,29 +28,57 @@ def _load_model_cost() -> dict[str, Any]:
 
 model_cost = _load_model_cost()
 
-# LiteLLM's pinned local map can lag newly released models. Keep production
-# offline and fill only missing official list-price fields.
-OFFICIAL_PRICE_FALLBACKS: dict[str, dict[str, Any]] = {
+# Verified 2026-09-08. Override stale fields as well as missing models in the
+# pinned, offline LiteLLM map. These are standard USD prices per token.
+# https://developers.openai.com/api/docs/pricing
+# https://platform.claude.com/docs/en/about-claude/pricing
+OFFICIAL_PRICE_OVERRIDES: dict[str, dict[str, Any]] = {
+    "gpt-6-astra": {
+        "litellm_provider": "openai",
+        "input_cost_per_token": 10e-6,
+        "cache_read_input_token_cost": 1e-6,
+        "output_cost_per_token": 50e-6,
+    },
     "gpt-5.6-terra": {
         "litellm_provider": "openai",
-        "input_cost_per_token": 2.5e-6,
-        "cache_read_input_token_cost": 0.25e-6,
-        "output_cost_per_token": 15e-6,
+        "input_cost_per_token": 2e-6,
+        "cache_read_input_token_cost": 0.2e-6,
+        "output_cost_per_token": 12e-6,
     },
     "gpt-5.6-sol": {
         "litellm_provider": "openai",
+        "input_cost_per_token": 4e-6,
+        "cache_read_input_token_cost": 0.4e-6,
+        "output_cost_per_token": 20e-6,
+    },
+    "gpt-5.6-luna": {
+        "litellm_provider": "openai",
+        "input_cost_per_token": 0.2e-6,
+        "cache_read_input_token_cost": 0.02e-6,
+        "output_cost_per_token": 1.2e-6,
+    },
+    "claude-fable-5-1": {
+        "litellm_provider": "anthropic",
+        "input_cost_per_token": 10e-6,
+        "cache_read_input_token_cost": 0.25e-6,
+        "output_cost_per_token": 50e-6,
+    },
+    "claude-opus-5": {
+        "litellm_provider": "anthropic",
         "input_cost_per_token": 5e-6,
         "cache_read_input_token_cost": 0.5e-6,
-        "output_cost_per_token": 30e-6,
+        "output_cost_per_token": 25e-6,
+    },
+    "claude-sonnet-5": {
+        "litellm_provider": "anthropic",
+        "input_cost_per_token": 2e-6,
+        "cache_read_input_token_cost": 0.2e-6,
+        "output_cost_per_token": 10e-6,
     },
 }
-official_price_models: set[str] = set()
-for model_name, fallback in OFFICIAL_PRICE_FALLBACKS.items():
-    info = model_cost.setdefault(model_name, {})
-    missing = {key: value for key, value in fallback.items() if key not in info}
-    if missing:
-        info.update(missing)
-        official_price_models.add(model_name)
+official_price_models = set(OFFICIAL_PRICE_OVERRIDES)
+for model_name, override in OFFICIAL_PRICE_OVERRIDES.items():
+    model_cost.setdefault(model_name, {}).update(override)
 
 # ---------------------------------------------------------------------------
 # Config (all tunable via environment variables)
@@ -188,10 +216,19 @@ OTEL_ENV_MAP: dict[str, tuple[str, str, str]] = {
     "GPT56_SOL_IN": ("gpt-5.6-sol", "openai", "input"),
     "GPT56_SOL_CACHED": ("gpt-5.6-sol", "openai", "cached"),
     "GPT56_SOL_OUT": ("gpt-5.6-sol", "openai", "output"),
+    "GPT56_TERRA_IN": ("gpt-5.6-terra", "openai", "input"),
+    "GPT56_TERRA_CACHED": ("gpt-5.6-terra", "openai", "cached"),
+    "GPT56_TERRA_OUT": ("gpt-5.6-terra", "openai", "output"),
+    "GPT56_LUNA_IN": ("gpt-5.6-luna", "openai", "input"),
+    "GPT56_LUNA_CACHED": ("gpt-5.6-luna", "openai", "cached"),
+    "GPT56_LUNA_OUT": ("gpt-5.6-luna", "openai", "output"),
+    "GPT6_ASTRA_IN": ("gpt-6-astra", "openai", "input"),
+    "GPT6_ASTRA_CACHED": ("gpt-6-astra", "openai", "cached"),
+    "GPT6_ASTRA_OUT": ("gpt-6-astra", "openai", "output"),
     "GPT53_CODEX_IN": ("gpt-5.3-codex", "openai", "input"),
     "GPT53_CODEX_CACHED": ("gpt-5.3-codex", "openai", "cached"),
     "GPT53_CODEX_OUT": ("gpt-5.3-codex", "openai", "output"),
-    # Gemini specific models
+    # Gemini — specific models
     "GEMINI_20_FLASH_IN": ("gemini-2.0-flash", "google", "input"),
     "GEMINI_20_FLASH_CACHED": ("gemini-2.0-flash", "google", "cached"),
     "GEMINI_20_FLASH_OUT": ("gemini-2.0-flash", "google", "output"),
@@ -237,7 +274,9 @@ def sync_litellm_to_db() -> None:
             if provider not in ALLOWED_PROVIDERS:
                 continue
             source = (
-                "openai-official" if model_name in official_price_models else "litellm"
+                f"{provider}-official"
+                if model_name in official_price_models
+                else "litellm"
             )
 
             for direction, field in COST_FIELDS.items():
@@ -247,7 +286,7 @@ def sync_litellm_to_db() -> None:
                 per_m = cost * 1_000_000
 
                 row = db.execute(
-                    "SELECT price_per_million FROM model_pricing"
+                    "SELECT price_per_million, source FROM model_pricing"
                     " WHERE provider=? AND model=? AND direction=?",
                     (provider, model_name, direction),
                 ).fetchone()
@@ -266,7 +305,7 @@ def sync_litellm_to_db() -> None:
                         (provider, model_name, direction, per_m, source),
                     )
                     inserted += 1
-                elif abs(row[0] - per_m) > 0.0001:
+                elif abs(row[0] - per_m) > 0.0001 or row[1] != source:
                     db.execute(
                         "INSERT INTO pricing_history"
                         " (provider, model, direction, old_price, new_price, source)"

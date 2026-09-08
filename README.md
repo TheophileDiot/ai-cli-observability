@@ -14,12 +14,12 @@ cost without sending your telemetry to another SaaS.
 
 > One Compose stack. Three AI CLIs. Full OpenTelemetry signals. Your data.
 
-| Answer | Signal |
-| --- | --- |
-| Which CLI and model consume the most tokens? | Usage and token metrics |
-| What would that activity cost through provider APIs? | USD and EUR estimates |
-| Where do slow requests and failures happen? | Latency, errors, logs, and traces |
-| Which tools are agents actually using? | Immutable tool events |
+| Answer                                               | Signal                            |
+| ---------------------------------------------------- | --------------------------------- |
+| Which CLI and model consume the most tokens?         | Usage and token metrics           |
+| What would that activity cost through provider APIs? | USD and EUR estimates             |
+| Where do slow requests and failures happen?          | Latency, errors, logs, and traces |
+| Which tools are agents actually using?               | Immutable tool events             |
 
 ## Quick start
 
@@ -204,9 +204,23 @@ raw API response. Grafana documents the current process in
 
 Claude Code emits native cost data. Codex and Gemini estimates are calculated
 from token events and model prices supplied by the pinned LiteLLM data set,
-with narrow official fallbacks for models missing from that set. The pricing
+with explicit official overrides for missing models and stale prices (verified
+2026-09-08). The pricing
 exporter also records pricing history in SQLite and exposes the USD-to-EUR rate
 to VictoriaMetrics.
+
+Codex pricing covers GPT-6 Astra and GPT-5.6 Sol, Terra, and Luna, including
+cache writes, Fast/Priority, Flex, and long-context charges. Earlier supported
+models retain their existing rules. Unknown internal aliases remain unsupported.
+Claude Fable 5.1, Opus 5, and Sonnet 5 are included in the price catalog; Claude
+request costs retain their native values without an extra promotion multiplier.
+Sonnet 5's $2/$10 per million input/output token price is now permanent.
+
+Prices are loaded at exporter startup and interpolated when the collector starts.
+After a pricing update, rebuild the pricing exporter first, wait for it to become
+healthy, then force-recreate the collector to load the new files. A normal Compose
+update does not recreate a container just because a bind-mounted file changed.
+Historical request records retain the prices captured at ingestion.
 
 These values are estimates, not invoices. Provider pricing, service tiers,
 long-context multipliers, promotions, and model aliases change. The collector
@@ -233,9 +247,12 @@ python3 scripts/smoke.py
 ```
 
 The smoke test checks OTLP authentication, all three signal submissions,
-Grafana dashboard provisioning, VictoriaLogs ingestion, VictoriaMetrics
-ingestion, and datasource registration. It writes only synthetic records named
-`ai-cli-observability-smoke`.
+Grafana dashboard provisioning, log and metric ingestion, fresh trace retrieval,
+and datasource registration. It also exercises model pricing, cache writes,
+Fast/Priority/Flex, long context, native-cost preservation, and Claude dashboard
+queries through Grafana's authenticated proxy. It writes only synthetic records
+named `ai-cli-observability-smoke`. Run it against a test stack: its synthetic
+requests deliberately include nonzero costs.
 
 Stop containers without deleting data:
 
