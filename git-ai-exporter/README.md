@@ -69,6 +69,16 @@ A 30-day window over a large repo costs minutes, so results are cached against
 `HEAD` and replayed until it moves or the TTL expires. A cold first pass takes
 several minutes; steady-state runs are seconds.
 
+Two cases the cache handles deliberately:
+
+- A repo that **fails on its first attempt** is recorded as failed and not retried
+  until `HEAD` moves. Some histories cannot be walked inside any sane timeout, and
+  retrying one hourly costs the full timeout every tick for data that never arrives.
+- A repo that **succeeded before and fails now** keeps serving its last good values
+  with `gitai_stats_stale` set to 1. Dropping them would blank the dashboard for a
+  whole TTL over what is usually a transient timeout. Alert on `gitai_stats_stale`
+  rather than on a metric going missing.
+
 ## Usage
 
 ```bash

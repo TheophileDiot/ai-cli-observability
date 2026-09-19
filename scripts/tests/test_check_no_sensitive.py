@@ -59,17 +59,50 @@ class TestBuiltinRules(unittest.TestCase):
         self.assertAllowed("Bearer abcdefghijklmnopqrstuvwx   allow-sensitive")
 
 
+class TestFailClosed(unittest.TestCase):
+    """A guard that cannot load its rules must block, not wave the commit through."""
+
+    def with_patterns(self, text):
+        original = guard.PATTERN_FILE
+        with tempfile.TemporaryDirectory() as d:
+            pf = Path(d) / ".sensitive-patterns"
+            pf.write_text(text)
+            guard.PATTERN_FILE = pf
+            try:
+                return guard.main([__file__])
+            finally:
+                guard.PATTERN_FILE = original
+
+    def test_bad_regex_blocks(self):
+        self.assertEqual(self.with_patterns("broken=[unclosed\n"), 2)
+
+    def test_missing_equals_blocks(self):
+        self.assertEqual(self.with_patterns("no-separator-here\n"), 2)
+
+    def test_valid_rules_do_not_block(self):
+        self.assertEqual(self.with_patterns("# just a comment\nok=\\bzzz\\b\n"), 0)
+
+
 class TestLocalPatternFile(unittest.TestCase):
     def test_local_patterns_are_applied(self):
         rules = [("private hostname", __import__("re").compile(r"\bsecret\.example\.net\b"))]
         self.assertTrue(check("host: secret.example.net", rules))
 
+    @unittest.skipUnless(
+        guard.PATTERN_FILE.exists(),
+        "no .sensitive-patterns in this checkout: the deployment rules that "
+        "would prove this claim are not present. The pre-commit hook is the "
+        "real enforcement; it runs with the operator's rules loaded.")
     def test_guard_ships_without_private_literals(self):
         """The committed script must not contain the strings it exists to hide.
 
         Asserted by running the guard over its own source, so this test needs
         no private literals of its own — an earlier version hardcoded them and
         would itself have leaked on commit.
+
+        This can only hold where the deployment rules exist, hence the skip:
+        in a clean checkout the builtin rules alone cannot see a private
+        hostname, so a pass would mean nothing.
         """
         self.assertFalse(guard.scan(guard.__file__, guard.load_rules()))
 

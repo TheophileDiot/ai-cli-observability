@@ -42,8 +42,13 @@ BUILTIN = [
 PRAGMA = "allow-sensitive"
 
 
+class RuleError(Exception):
+    """A deployment rule could not be compiled."""
+
+
 def load_rules():
     rules = [(label, re.compile(p, re.IGNORECASE)) for label, p in BUILTIN]
+    bad = []
     if PATTERN_FILE.exists():
         for n, raw in enumerate(PATTERN_FILE.read_text().splitlines(), 1):
             line = raw.strip()
@@ -51,12 +56,17 @@ def load_rules():
                 continue
             label, _, pattern = line.partition("=")
             if not pattern:
-                print(f"{PATTERN_FILE}:{n}: expected 'label=regex'", file=sys.stderr)
+                bad.append(f"{PATTERN_FILE}:{n}: expected 'label=regex'")
                 continue
             try:
                 rules.append((label.strip(), re.compile(pattern.strip(), re.IGNORECASE)))
             except re.error as e:
-                print(f"{PATTERN_FILE}:{n}: bad regex: {e}", file=sys.stderr)
+                bad.append(f"{PATTERN_FILE}:{n}: bad regex: {e}")
+    if bad:
+        # Fail closed. A malformed rule silently disables part of the control,
+        # and a guard that lets a commit through after failing to load is
+        # worse than no guard, because it still looks like it ran.
+        raise RuleError("\n".join(bad))
     return rules
 
 
@@ -77,7 +87,12 @@ def scan(path, rules):
 
 
 def main(paths):
-    rules = load_rules()
+    try:
+        rules = load_rules()
+    except RuleError as e:
+        print(f"{e}\n\nRefusing to run with rules that failed to load.",
+              file=sys.stderr)
+        return 2
     if not PATTERN_FILE.exists():
         print(f"note: {PATTERN_FILE.name} not found — generic rules only. "
               "Copy .sensitive-patterns.example to catch your own identifiers.",

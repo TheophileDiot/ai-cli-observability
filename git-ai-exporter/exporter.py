@@ -26,6 +26,8 @@ CACHE = Path(os.environ.get(
 # HEAD moves. Recompute on a new HEAD, or once a day so the sliding window
 # edge re-settles; otherwise replay the cached values.
 CACHE_TTL = int(os.environ.get("GITAI_CACHE_TTL", 24 * 3600))
+# git's well-known empty tree: a range base that includes the root commit.
+EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
 
 def git(repo, *args):
@@ -53,9 +55,10 @@ def window_range(repo):
     # Newest commit strictly older than the window == the range base.
     base = git(repo, "rev-list", "-1", f"--before={since}", "HEAD")
     if not base:
-        base = git(repo, "rev-list", "--max-parents=0", "-1", "HEAD")
-        if not base:
-            return None
+        # The whole history fits inside the window. `A..B` excludes A, so using
+        # the root commit here would drop it — and an initial import is usually
+        # the largest commit in the repo. The empty tree has no such edge.
+        base = EMPTY_TREE
     return f"{base}..HEAD"
 
 
@@ -75,17 +78,21 @@ def stats(repo, rng):
     if r.returncode != 0:
         return None
     try:
-        return json.loads(r.stdout)
+        parsed = json.loads(r.stdout)
     except json.JSONDecodeError:
         return None
+    # Valid JSON is not necessarily the schema we expect. A list or a scalar
+    # would raise deep inside collect() and take the whole export with it.
+    return parsed if isinstance(parsed, dict) else None
 
 
 def points(name, rows):
     """rows: list of (attrs dict, int value)"""
     now = str(time.time_ns())
+    # No `unit`: the OTLP-to-Prometheus translation turns unit "1" into a
+    # `_ratio` suffix, and these are line counts, not ratios.
     return {
         "name": name,
-        "unit": "1",
         "gauge": {"dataPoints": [
             {"attributes": [{"key": k, "value": {"stringValue": str(v)}}
                             for k, v in sorted(a.items())],
@@ -96,8 +103,17 @@ def points(name, rows):
 
 
 def collect(payloads, repo_name, forge, data):
-    """Fold one repo's `git-ai stats` JSON into the metric row accumulator."""
+    """Fold one repo's `git-ai stats` JSON into the metric row accumulator.
+
+    Two schemas exist. `git-ai stats <commit>` puts the line counts at the top
+    level; `git-ai stats <a>..<b>` nests them under `range_stats` and adds
+    `authorship_stats`. We always query a range, but accept both so a
+    single-commit payload is not silently reduced to commit counts.
+    """
     base = {"repo": repo_name, "forge": forge}
+    lines = data.get("range_stats") or data
+    if not isinstance(lines, dict):
+        lines = {}
     for field, metric in (
         ("ai_additions", "gitai_ai_additions"),
         ("ai_accepted", "gitai_ai_accepted"),
@@ -106,11 +122,15 @@ def collect(payloads, repo_name, forge, data):
         ("git_diff_added_lines", "gitai_diff_added_lines"),
         ("git_diff_deleted_lines", "gitai_diff_deleted_lines"),
     ):
-        if field in data:
-            payloads.setdefault(metric, []).append((base, data[field]))
+        if field in lines:
+            payloads.setdefault(metric, []).append((base, lines[field]))
 
-    for key, per in (data.get("tool_model_breakdown") or {}).items():
-        tool, _, model = key.partition("/")
+    for key, per in (lines.get("tool_model_breakdown") or {}).items():
+        # Real payloads use "claude::claude-opus-5". The upstream README shows
+        # "claude_code/claude-sonnet-5", so accept both rather than trusting
+        # either: guessing wrong silently mislabels every model.
+        sep = "::" if "::" in key else "/"
+        tool, _, model = key.partition(sep)
         attrs = dict(base, tool=tool, model=model or "unknown")
         for field, metric in (("ai_additions", "gitai_tool_ai_additions"),
                               ("ai_accepted", "gitai_tool_ai_accepted")):
@@ -154,7 +174,7 @@ def load_cache():
 def save_cache(cache):
     try:
         CACHE.parent.mkdir(parents=True, exist_ok=True)
-        tmp = CACHE.with_suffix(".tmp")
+        tmp = CACHE.with_suffix(f".{os.getpid()}.tmp")
         tmp.write_text(json.dumps(cache))
         tmp.replace(CACHE)          # atomic; a killed run never leaves a torn file
     except OSError as e:
@@ -163,7 +183,7 @@ def save_cache(cache):
 
 def main():
     dry = "--dry-run" in sys.argv
-    payloads, scanned, fresh, skipped = {}, 0, 0, 0
+    payloads, scanned, fresh, skipped, stale = {}, 0, 0, 0, 0
     cache = load_cache()
     now = time.time()
     for gitdir in sorted(ROOT.glob("*/.git")):
@@ -185,10 +205,24 @@ def main():
             data = stats(repo, rng)
             if data is None:
                 print(f"warn: stats failed for {repo.name}", file=sys.stderr)
-                cache[str(repo)] = {"head": head, "at": now, "failed": True}
-                continue
-            cache[str(repo)] = {"head": head, "at": now, "data": data}
-            fresh += 1
+                previous = (hit or {}).get("data")
+                if previous is None:
+                    cache[str(repo)] = {"head": head, "at": now, "failed": True}
+                    continue
+                # A repo that succeeded before and fails now is usually a
+                # transient timeout. Discarding its numbers would blank the
+                # dashboard for a full TTL, so keep serving the last good
+                # values and flag them as stale instead.
+                cache[str(repo)] = {"head": head, "at": now, "data": previous,
+                                    "stale": True}
+                data = previous
+                stale += 1
+            else:
+                cache[str(repo)] = {"head": head, "at": now, "data": data}
+                fresh += 1
+        payloads.setdefault("gitai_stats_stale", []).append(
+            ({"repo": repo.name, "forge": forge_of(repo)},
+             1 if (cache.get(str(repo), {}).get("stale")) else 0))
         collect(payloads, repo.name, forge_of(repo), data)
         scanned += 1
     # Drop entries for repos that no longer exist, so the cache cannot grow forever.
