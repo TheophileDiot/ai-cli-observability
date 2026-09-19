@@ -1,0 +1,10 @@
+[Unit]
+Description=Hourly git-ai attribution export
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=5m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,87 @@
+# git-ai exporter
+
+Exports [git-ai](https://github.com/git-ai-project/git-ai) commit attribution —
+which lines of each commit were written by an agent, and by which tool and model —
+into the same VictoriaMetrics instance backing the AI CLI dashboards.
+
+Attribution answers a question token telemetry cannot: not *how much did the
+agents cost*, but *how much of the code that shipped did they actually write*.
+
+## What it does not export
+
+`git-ai usage` also reports tokens, cost and session counts. Those are **not**
+exported here: Claude Code and Codex already push them natively over OTLP, and
+re-exporting would double-count them in the existing dashboards. This exporter
+emits attribution only.
+
+## How it reaches the collector
+
+It pushes OTLP/JSON to the existing authenticated collector ingress — no new
+port, router or credential. Endpoint and bearer are read from
+`GITAI_OTEL_ENDPOINT` / `GITAI_OTEL_HEADERS`, falling back to the `env` block of
+`~/.claude/settings.json` so the bearer has exactly one home on the machine.
+
+The collector is published on a NetBird address only, so the systemd unit skips
+the run when the tunnel is down rather than failing against a dead endpoint.
+
+## Metrics
+
+All gauges, labelled `repo` and `forge`:
+
+| Metric                                                | Meaning                                 |
+| ----------------------------------------------------- | --------------------------------------- |
+| `gitai_ai_additions`                                  | Lines added by an agent in the window   |
+| `gitai_ai_accepted`                                   | Agent lines that survived to the commit |
+| `gitai_human_additions`                               | Lines added by a human                  |
+| `gitai_unknown_additions`                             | Lines with no attribution record        |
+| `gitai_diff_added_lines` / `gitai_diff_deleted_lines` | Raw git diff totals                     |
+| `gitai_commits_total`                                 | Commits in the window                   |
+| `gitai_commits_with_authorship`                       | Commits carrying a git-ai note          |
+
+`gitai_tool_ai_additions` and `gitai_tool_ai_accepted` add `tool` and `model`.
+
+Export the last two as a ratio before reading anything else. Attribution only
+exists for commits made on a machine where git-ai is installed and the agent has
+been restarted since; without that coverage ratio, "no AI code" and "attribution
+never landed" look identical on a graph.
+
+## Coverage caveats
+
+- Only commits made on this machine are attributed. On a repo with other
+  contributors, the AI percentage reflects *your share of the commits*, not the
+  project's AI content.
+- GitHub squash-merge rewrites commits server-side and drops the notes from the
+  target branch. `git ai ci github install` fixes this; without it, treat
+  post-merge numbers on shared repos as a floor.
+
+## Configuration
+
+| Variable              | Default                | Purpose                              |
+| --------------------- | ---------------------- | ------------------------------------ |
+| `GITAI_SCAN_ROOT`     | `~/dev`                | Directory of repos to scan           |
+| `GITAI_WINDOW_DAYS`   | `30`                   | Rolling window                       |
+| `GITAI_CACHE_TTL`     | `86400`                | Recompute a repo at least this often |
+| `GITAI_TIMEOUT`       | `300`                  | Per-command timeout, seconds         |
+| `GITAI_OTEL_ENDPOINT` | Claude `settings.json` | Collector base URL                   |
+| `GITAI_OTEL_HEADERS`  | Claude `settings.json` | `Authorization=Bearer …`             |
+
+A 30-day window over a large repo costs minutes, so results are cached against
+`HEAD` and replayed until it moves or the TTL expires. A cold first pass takes
+several minutes; steady-state runs are seconds.
+
+## Usage
+
+```bash
+./exporter.py --dry-run     # print the OTLP payload, push nothing
+./exporter.py               # push to the collector
+
+cd tests && PYTHONPATH=.. python3 -m unittest test_exporter
+```
+
+## Install
+
+```bash
+cp systemd/git-ai-exporter.{service,timer} ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now git-ai-exporter.timer
+```

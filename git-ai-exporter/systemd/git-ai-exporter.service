@@ -1,0 +1,15 @@
+[Unit]
+Description=Export git-ai commit attribution to the AI CLI OTel collector
+Documentation=https://github.com/git-ai-project/git-ai
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/dev/ai-cli-observability/git-ai-exporter/exporter.py
+# The collector is published on the NetBird address only, so skip the run
+# entirely when the tunnel is down instead of failing against a dead endpoint.
+ExecCondition=/usr/bin/test -d /sys/class/net/wt0
+# A full cold pass walks 30 days of history across every active repo; keep it
+# off the critical path of whatever the machine is actually doing.
+Nice=10
+IOSchedulingClass=idle
