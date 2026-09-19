@@ -1,0 +1,27 @@
+git-ai-exporter/README.md
+  s_1150d6ec0948e6::t_5cc437e9ffa991 48-57
+git-ai-exporter/exporter.py
+  s_1150d6ec0948e6::t_099229f803f588 9,30-35,198-199
+git-ai-exporter/systemd/git-ai-exporter.service
+  s_1150d6ec0948e6::t_3f94761d2b497a 8-11
+git-ai-exporter/tests/test_exporter.py
+  s_1150d6ec0948e6::t_723d9413514ec4 274-328
+grafana/dashboards/git-ai-attribution.json
+  s_1150d6ec0948e6::t_d09b8ff734907b 1-1574
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b88b2b4b702d0bb189ce061ff1e4f058407ee62d",
+  "prompts": {},
+  "sessions": {
+    "s_1150d6ec0948e6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2beefc40-498f-4d8c-ad23-6c6db23f1f61",
+        "model": "claude-opus-5"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
