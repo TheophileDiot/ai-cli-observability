@@ -2,7 +2,12 @@
   "uid": "git-ai-attribution",
   "title": "Git AI \u2014 Code Attribution",
   "description": "Line-level AI attribution from git-ai, over a rolling 30-day window of locally committed code. At low coverage this is an adoption and data-quality view: read every percentage next to the sample size beside it.",
-  "tags": ["ai", "git-ai", "attribution", "observability"],
+  "tags": [
+    "ai",
+    "git-ai",
+    "attribution",
+    "observability"
+  ],
   "schemaVersion": 42,
   "version": 1,
   "editable": true,
@@ -165,7 +170,9 @@
         "textMode": "auto",
         "wideLayout": true,
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         }
@@ -236,7 +243,9 @@
         "textMode": "auto",
         "wideLayout": true,
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         }
@@ -300,7 +309,9 @@
         "textMode": "auto",
         "wideLayout": true,
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         }
@@ -364,7 +375,9 @@
         "textMode": "auto",
         "wideLayout": true,
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         }
@@ -427,7 +440,9 @@
         "textMode": "auto",
         "wideLayout": true,
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         }
@@ -498,7 +513,9 @@
         "textMode": "auto",
         "wideLayout": true,
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         }
@@ -689,7 +706,53 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "AI"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A78D4"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Human"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#C97B2E"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Unattributed"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8E66BC"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "displayMode": "gradient",
@@ -701,7 +764,9 @@
         "namePlacement": "left",
         "sizing": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         }
@@ -1216,7 +1281,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
+        "w": 12,
         "x": 0,
         "y": 29
       },
@@ -1250,7 +1315,9 @@
         "namePlacement": "left",
         "sizing": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         }
@@ -1282,8 +1349,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 8,
+        "w": 12,
+        "x": 12,
         "y": 29
       },
       "fieldConfig": {
@@ -1317,7 +1384,9 @@
         "namePlacement": "left",
         "sizing": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         }
@@ -1348,10 +1417,10 @@
         "uid": "victoriametrics"
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 29
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 37
       },
       "fieldConfig": {
         "defaults": {
@@ -1427,7 +1496,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 44
       },
       "panels": []
     },
@@ -1444,7 +1513,7 @@
         "h": 7,
         "w": 10,
         "x": 0,
-        "y": 38
+        "y": 45
       },
       "fieldConfig": {
         "defaults": {
@@ -1475,7 +1544,9 @@
         "namePlacement": "left",
         "sizing": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         }
@@ -1509,7 +1580,7 @@
         "h": 7,
         "w": 14,
         "x": 10,
-        "y": 38
+        "y": 45
       },
       "fieldConfig": {
         "defaults": {
