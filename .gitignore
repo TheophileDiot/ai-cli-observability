@@ -5,3 +5,4 @@ __pycache__/
 *.db-shm
 *.db-wal
 .DS_Store
+.sensitive-patterns

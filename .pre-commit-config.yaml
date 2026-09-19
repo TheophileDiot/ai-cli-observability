@@ -1,0 +1,26 @@
+# This repository is PUBLIC. These hooks are the enforcement behind the
+# "never commit private data" rule in CLAUDE.md — prose alone does not hold.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ["--maxkb=512"]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: check-no-sensitive
+        name: block private hostnames, addresses and identifiers
+        entry: scripts/check_no_sensitive.py
+        language: system
+        # Grafana exports are the main leak vector, so scan every text file
+        # rather than a curated extension list.
+        types: [text]

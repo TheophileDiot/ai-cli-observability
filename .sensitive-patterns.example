@@ -1,0 +1,6 @@
+# Deployment-specific denylist: label=regex, one per line, matched case-insensitively.
+# Copy to .sensitive-patterns (gitignored) and fill in your own identifiers.
+# Do NOT commit the real file — it would publish the strings it suppresses.
+private hostname=\b[a-z0-9-]+\.internal\.example\b
+private repo name=\bmy-private-repo\b
+forge account=\bmy-forge-user\b

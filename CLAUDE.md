@@ -91,3 +91,15 @@ Prompt/tool-content logging is disabled in every client example; keep it that wa
 user explicitly opts in. Never commit `.env`, tokens, real telemetry, private hostnames, or
 Grafana exports carrying private labels. Compose port bindings must stay loopback unless the
 user is deliberately fronting the collector with a TLS proxy.
+
+That rule is enforced, not merely stated — run `pre-commit install` once per clone:
+
+- **gitleaks** catches generic secrets (API keys, private keys).
+- **`scripts/check_no_sensitive.py`** catches what gitleaks cannot know: CGNAT and RFC1918
+  addresses, bearer tokens and contact emails, plus your own deployment identifiers loaded
+  from `.sensitive-patterns`.
+
+`.sensitive-patterns` is gitignored on purpose. A denylist of private hostnames and repo
+names is itself sensitive; committing it would publish the exact strings it suppresses.
+Copy `.sensitive-patterns.example` and fill it in locally. A line that must legitimately
+show a private-looking value is exempted by marking it `allow-sensitive`.
