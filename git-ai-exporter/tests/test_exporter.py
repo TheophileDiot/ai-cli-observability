@@ -271,6 +271,61 @@ class TestCacheWrite(unittest.TestCase):
         self.assertIn("getpid", inspect.getsource(exporter.save_cache))
 
 
+class TestExclusion(unittest.TestCase):
+    """git-ai's own exclude only stops new tracking; existing notes still read."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        for name in ("obsidian", "realcode"):
+            (root / name / ".git").mkdir(parents=True)
+        self.seen = []
+        self._saved = (exporter.ROOT, exporter.CACHE, exporter.stats,
+                       exporter.window_range, exporter.git, exporter.forge_of,
+                       exporter.EXCLUDE)
+        exporter.ROOT = root
+        exporter.CACHE = root / "c.json"
+        exporter.window_range = lambda repo: "a..HEAD"
+        exporter.git = lambda repo, *a: "sha"
+        exporter.forge_of = lambda repo: "example.com"
+
+        def rec(repo, rng):
+            self.seen.append(repo.name)
+            return {"range_stats": {"ai_additions": 1}}
+
+        exporter.stats = rec
+
+    def tearDown(self):
+        (exporter.ROOT, exporter.CACHE, exporter.stats, exporter.window_range,
+         exporter.git, exporter.forge_of, exporter.EXCLUDE) = self._saved
+        self.tmp.cleanup()
+
+    def run_once(self):
+        argv = sys.argv
+        sys.argv = ["exporter.py", "--dry-run"]
+        try:
+            with contextlib.redirect_stdout(io.StringIO()), \
+                 contextlib.redirect_stderr(io.StringIO()):
+                exporter.main()
+        finally:
+            sys.argv = argv
+
+    def test_excluded_repo_is_skipped(self):
+        exporter.EXCLUDE = ["obsidian"]
+        self.run_once()
+        self.assertEqual(self.seen, ["realcode"])
+
+    def test_glob_pattern(self):
+        exporter.EXCLUDE = ["obsid*"]
+        self.run_once()
+        self.assertEqual(self.seen, ["realcode"])
+
+    def test_no_exclusions_scans_everything(self):
+        exporter.EXCLUDE = []
+        self.run_once()
+        self.assertEqual(sorted(self.seen), ["obsidian", "realcode"])
+
+
 class TestOtlpShape(unittest.TestCase):
     def test_no_unit_field(self):
         """unit "1" makes the Prometheus translation append `_ratio`."""

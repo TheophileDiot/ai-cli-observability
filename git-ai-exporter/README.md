@@ -45,6 +45,16 @@ exists for commits made on a machine where git-ai is installed and the agent has
 been restarted since; without that coverage ratio, "no AI code" and "attribution
 never landed" look identical on a graph.
 
+## Excluding repos
+
+git-ai's own `exclude_repositories` stops it tracking a repo, but notes already
+written stay in git and still appear in `git-ai stats`. Keeping a repo out of the
+dashboard therefore needs `GITAI_EXCLUDE_REPOS` here as well.
+
+Worth excluding: anything auto-committed by a timer or a bot. A notes vault whose
+commits are agent-written prose will otherwise dominate every panel and make the
+AI percentage meaningless.
+
 ## Coverage caveats
 
 - Only commits made on this machine are attributed. On a repo with other

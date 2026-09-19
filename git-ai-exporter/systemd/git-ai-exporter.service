@@ -5,6 +5,10 @@ After=network-online.target
 
 [Service]
 Type=oneshot
+# The Obsidian vault is auto-committed by a timer and its commits are
+# agent-written notes, not code. Left in, it dominates every panel and makes
+# "% AI" meaningless. Adjust for your own machine.
+Environment=GITAI_EXCLUDE_REPOS=obsidian
 ExecStart=%h/dev/ai-cli-observability/git-ai-exporter/exporter.py
 # The collector is published on the NetBird address only, so skip the run
 # entirely when the tunnel is down instead of failing against a dead endpoint.

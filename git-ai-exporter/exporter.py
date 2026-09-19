@@ -6,6 +6,7 @@ reaches VictoriaMetrics natively from Claude Code and Codex, so re-exporting
 `git-ai usage` numbers here would double-count them in ai-cli-overview.
 """
 
+import fnmatch
 import json
 import os
 import subprocess
@@ -26,6 +27,12 @@ CACHE = Path(os.environ.get(
 # HEAD moves. Recompute on a new HEAD, or once a day so the sliding window
 # edge re-settles; otherwise replay the cached values.
 CACHE_TTL = int(os.environ.get("GITAI_CACHE_TTL", 24 * 3600))
+# Repos to leave out of the metrics, as comma-separated glob patterns matched
+# against the directory name. git-ai's own `exclude_repositories` only stops
+# future tracking; notes already written still show up in `git-ai stats`, so
+# excluding a repo from the dashboard has to happen here as well.
+EXCLUDE = [p.strip() for p in os.environ.get("GITAI_EXCLUDE_REPOS", "").split(",")
+           if p.strip()]
 # git's well-known empty tree: a range base that includes the root commit.
 EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
@@ -188,6 +195,8 @@ def main():
     now = time.time()
     for gitdir in sorted(ROOT.glob("*/.git")):
         repo = gitdir.parent
+        if any(fnmatch.fnmatch(repo.name, pat) for pat in EXCLUDE):
+            continue
         rng = window_range(repo)
         if not rng:
             continue
