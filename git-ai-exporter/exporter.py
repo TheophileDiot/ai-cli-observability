@@ -188,17 +188,41 @@ def save_cache(cache):
         print(f"warn: cache write failed: {e}", file=sys.stderr)
 
 
+def summary(outcomes):
+    parts = [f"{v} {k}" for k, v in outcomes.items() if v]
+    return ", ".join(parts) or "no repos"
+
+
 def main():
     dry = "--dry-run" in sys.argv
-    payloads, scanned, fresh, skipped, stale = {}, 0, 0, 0, 0
+    payloads = {}
+    outcomes = {k: 0 for k in
+                ("fresh", "cached", "stale", "failed", "known_failing",
+                 "excluded", "no_commits")}
     cache = load_cache()
     now = time.time()
+
+    def status(repo, failed, stale_flag):
+        """Emit per-repo health for every repo considered, not just the ones
+        that produced numbers.
+
+        A repo that has never succeeded used to emit nothing at all, so it was
+        indistinguishable on a dashboard from one with no recent commits, one
+        that was excluded, and a broken pipeline. Health has to be stated, not
+        inferred from a series going missing.
+        """
+        attrs = {"repo": repo.name, "forge": forge_of(repo)}
+        payloads.setdefault("gitai_repo_failed", []).append((attrs, 1 if failed else 0))
+        payloads.setdefault("gitai_stats_stale", []).append((attrs, 1 if stale_flag else 0))
+
     for gitdir in sorted(ROOT.glob("*/.git")):
         repo = gitdir.parent
         if any(fnmatch.fnmatch(repo.name, pat) for pat in EXCLUDE):
+            outcomes["excluded"] += 1
             continue
         rng = window_range(repo)
         if not rng:
+            outcomes["no_commits"] += 1
             continue
         head = git(repo, "rev-parse", "HEAD")
         hit = cache.get(str(repo))
@@ -207,9 +231,12 @@ def main():
             # inside the timeout fails identically every run, so retrying it
             # hourly burns the full timeout forever for no new data.
             if hit.get("failed"):
-                skipped += 1
+                outcomes["known_failing"] += 1
+                status(repo, failed=True, stale_flag=False)
                 continue
             data = hit["data"]
+            outcomes["stale" if hit.get("stale") else "cached"] += 1
+            stale_flag = bool(hit.get("stale"))
         else:
             data = stats(repo, rng)
             if data is None:
@@ -217,6 +244,8 @@ def main():
                 previous = (hit or {}).get("data")
                 if previous is None:
                     cache[str(repo)] = {"head": head, "at": now, "failed": True}
+                    outcomes["failed"] += 1
+                    status(repo, failed=True, stale_flag=False)
                     continue
                 # A repo that succeeded before and fails now is usually a
                 # transient timeout. Discarding its numbers would blank the
@@ -225,15 +254,22 @@ def main():
                 cache[str(repo)] = {"head": head, "at": now, "data": previous,
                                     "stale": True}
                 data = previous
-                stale += 1
+                outcomes["stale"] += 1
+                stale_flag = True
             else:
                 cache[str(repo)] = {"head": head, "at": now, "data": data}
-                fresh += 1
-        payloads.setdefault("gitai_stats_stale", []).append(
-            ({"repo": repo.name, "forge": forge_of(repo)},
-             1 if (cache.get(str(repo), {}).get("stale")) else 0))
+                outcomes["fresh"] += 1
+                stale_flag = False
+        status(repo, failed=False, stale_flag=stale_flag)
         collect(payloads, repo.name, forge_of(repo), data)
-        scanned += 1
+
+    # Run-level facts. Without these, "fewer repos than yesterday" cannot be
+    # told apart from "the exporter did not run".
+    payloads["gitai_export_timestamp_seconds"] = [({}, int(now))]
+    for outcome, count in outcomes.items():
+        payloads.setdefault("gitai_export_repos", []).append(
+            ({"outcome": outcome}, count))
+
     # Drop entries for repos that no longer exist, so the cache cannot grow forever.
     cache = {k: v for k, v in cache.items() if Path(k).exists()}
     save_cache(cache)   # perf-only state, so --dry-run warms it too
@@ -255,8 +291,8 @@ def main():
 
     if dry:
         json.dump(body, sys.stdout, indent=2)
-        print(f"\n{scanned} repos ({fresh} recomputed, {skipped} known-failing), "
-              f"{len(payloads)} metrics", file=sys.stderr)
+        print("\n" + summary(outcomes) + f", {len(payloads)} metrics",
+              file=sys.stderr)
         return 0
 
     url, hdrs = otel_config()
@@ -264,8 +300,8 @@ def main():
         url, data=json.dumps(body).encode(),
         headers={"Content-Type": "application/json", **hdrs})
     with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
-        print(f"{resp.status} — {scanned} repos ({fresh} recomputed, "
-              f"{skipped} known-failing), {len(payloads)} metrics")
+        print(f"{resp.status} — " + summary(outcomes) +
+              f", {len(payloads)} metrics")
     return 0
 
 

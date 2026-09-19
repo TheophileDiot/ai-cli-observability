@@ -40,6 +40,12 @@ All gauges, labelled `repo` and `forge`:
 
 `gitai_tool_ai_additions` and `gitai_tool_ai_accepted` add `tool` and `model`.
 
+`gitai_repo_failed` is emitted for **every** repo considered, including ones that
+produced no numbers. An earlier version emitted nothing for a failing repo, which
+made "the exporter is broken" indistinguishable from "this repo had no commits",
+"this repo is excluded", and "this repo always fails". Health is stated, never
+inferred from a series going missing.
+
 Export the last two as a ratio before reading anything else. Attribution only
 exists for commits made on a machine where git-ai is installed and the agent has
 been restarted since; without that coverage ratio, "no AI code" and "attribution
@@ -54,6 +60,17 @@ dashboard therefore needs `GITAI_EXCLUDE_REPOS` here as well.
 Worth excluding: anything auto-committed by a timer or a bot. A notes vault whose
 commits are agent-written prose will otherwise dominate every panel and make the
 AI percentage meaningless.
+
+## What the numbers mean
+
+- The window is a **rolling 30 days**, recomputed each run. The time series
+  therefore show how a trailing aggregate drifts, not activity on that day.
+- Range mode reports the **net diff** across the window, not the sum of
+  per-commit churn: a line added then rewritten counts once, not twice. This is
+  the honest figure for "how much code is there", not "how much typing happened".
+- "Committed locally" is the limit of what this can claim. The exporter reads each
+  repo's local HEAD and knows nothing about merges, pull requests or deployments,
+  so none of these numbers establish that the code shipped.
 
 ## Coverage caveats
 

@@ -1,7 +1,7 @@
 {
   "uid": "git-ai-attribution",
   "title": "Git AI \u2014 Code Attribution",
-  "description": "Line-level AI attribution from git-ai. Shows how much of the code that actually shipped was agent-written, alongside the coverage needed to judge whether those percentages mean anything yet.",
+  "description": "Line-level AI attribution from git-ai, over a rolling 30-day window of locally committed code. At low coverage this is an adoption and data-quality view: read every percentage next to the sample size beside it.",
   "tags": ["ai", "git-ai", "attribution", "observability"],
   "schemaVersion": 42,
   "version": 1,
@@ -63,7 +63,7 @@
       },
       {
         "name": "window",
-        "label": "Freshness window",
+        "label": "Sample freshness",
         "type": "custom",
         "query": "2h,6h,12h,24h,48h",
         "current": {
@@ -97,7 +97,7 @@
             "selected": false
           }
         ],
-        "description": "How far back to look for the most recent export. The exporter pushes hourly, so a plain instant query would read 'No data' for most of each hour."
+        "description": "How far back to look for the most recent export. This is NOT the measurement period - the exporter always reports a rolling 30-day window. It only controls how stale a sample may be before panels go empty."
       }
     ]
   },
@@ -105,7 +105,7 @@
     {
       "id": 1,
       "type": "row",
-      "title": "Overview",
+      "title": "Coverage \u2014 can these numbers be trusted yet?",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -118,8 +118,8 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "AI Share of Attributed Lines",
-      "description": "Of the lines git-ai could attribute, the share an agent wrote. Deliberately not a share of *all* added lines: almost every line in these repos predates git-ai and is unattributable, which would drag any such number to near zero and say nothing. Read this next to Line Attribution Coverage.",
+      "title": "Line Attribution Coverage",
+      "description": "Share of added lines in the rolling 30-day window that carry any attribution. git-ai cannot attribute code written before it was installed, so this starts near zero and climbs as new commits land. Everything else on this dashboard is only as trustworthy as this number.",
       "datasource": {
         "type": "prometheus",
         "uid": "victoriametrics"
@@ -128,6 +128,212 @@
         "h": 4,
         "w": 4,
         "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#8E66BC",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 10
+              },
+              {
+                "color": "green",
+                "value": 40
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "editorMode": "code",
+          "expr": "100 * (sum(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])) + sum(last_over_time(gitai_human_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))) / clamp_min(sum(last_over_time(gitai_diff_added_lines{repo=~\"$repo\",forge=~\"$forge\"}[$window])), 1)",
+          "legendFormat": "__auto",
+          "range": false,
+          "instant": true,
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Commit Coverage",
+      "description": "Commits in the rolling 30-day window carrying a git-ai note.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#8E66BC",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 10
+              },
+              {
+                "color": "green",
+                "value": 40
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "editorMode": "code",
+          "expr": "100 * sum(last_over_time(gitai_commits_with_authorship{repo=~\"$repo\",forge=~\"$forge\"}[$window])) / clamp_min(sum(last_over_time(gitai_commits_total{repo=~\"$repo\",forge=~\"$forge\"}[$window])), 1)",
+          "legendFormat": "__auto",
+          "range": false,
+          "instant": true,
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Attributed Lines",
+      "description": "Sample size: AI + human lines that git-ai could attribute. The percentages on this dashboard rest on exactly this many lines.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": null,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#4A78D4"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "editorMode": "code",
+          "expr": "(sum(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])) + sum(last_over_time(gitai_human_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])))",
+          "legendFormat": "__auto",
+          "range": false,
+          "instant": true,
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "AI Share of Attributed Lines",
+      "description": "Of the lines git-ai could attribute, the share an agent wrote. Not a share of all added lines - that would be dominated by unattributable history and would say nothing. Read it next to Attributed Lines.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
         "y": 1
       },
       "fieldConfig": {
@@ -180,205 +386,10 @@
       ]
     },
     {
-      "id": 3,
-      "type": "stat",
-      "title": "AI Lines Written",
-      "description": "Agent-written lines added in the window.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "victoriametrics"
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 1
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": null,
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#4A78D4"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto",
-        "wideLayout": true,
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "victoriametrics"
-          },
-          "editorMode": "code",
-          "expr": "sum(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
-          "legendFormat": "__auto",
-          "range": false,
-          "instant": true,
-          "format": "time_series",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "type": "stat",
-      "title": "Acceptance Rate",
-      "description": "Agent-written lines that survived into the commit. 100% means nothing was overwritten before committing.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "victoriametrics"
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
-        "y": 1
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "decimals": 1,
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#4A78D4"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto",
-        "wideLayout": true,
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "victoriametrics"
-          },
-          "editorMode": "code",
-          "expr": "100 * sum(last_over_time(gitai_ai_accepted{repo=~\"$repo\",forge=~\"$forge\"}[$window])) / clamp_min(sum(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])), 1)",
-          "legendFormat": "__auto",
-          "range": false,
-          "instant": true,
-          "format": "time_series",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "type": "stat",
-      "title": "Line Attribution Coverage",
-      "description": "Share of added lines carrying any attribution. Starts near zero and climbs only as new commits land: git-ai cannot attribute history written before it was installed. A low value here means the percentages above rest on a small sample.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "victoriametrics"
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 12,
-        "y": 1
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "decimals": 1,
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#8E66BC",
-                "value": null
-              },
-              {
-                "color": "text",
-                "value": 25
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto",
-        "wideLayout": true,
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "victoriametrics"
-          },
-          "editorMode": "code",
-          "expr": "100 * (sum(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])) + sum(last_over_time(gitai_human_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))) / clamp_min(sum(last_over_time(gitai_diff_added_lines{repo=~\"$repo\",forge=~\"$forge\"}[$window])), 1)",
-          "legendFormat": "__auto",
-          "range": false,
-          "instant": true,
-          "format": "time_series",
-          "refId": "A"
-        }
-      ]
-    },
-    {
       "id": 6,
       "type": "stat",
-      "title": "Commit Coverage",
-      "description": "Commits in the window carrying a git-ai note.",
+      "title": "Repos With Attribution",
+      "description": "Repos with at least one attributed commit. Compare with Repos Scanned below: the gap is adoption still to come, not failure.",
       "datasource": {
         "type": "prometheus",
         "uid": "victoriametrics"
@@ -391,73 +402,6 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
-          "decimals": 1,
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#8E66BC",
-                "value": null
-              },
-              {
-                "color": "text",
-                "value": 25
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto",
-        "wideLayout": true,
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "victoriametrics"
-          },
-          "editorMode": "code",
-          "expr": "100 * sum(last_over_time(gitai_commits_with_authorship{repo=~\"$repo\",forge=~\"$forge\"}[$window])) / clamp_min(sum(last_over_time(gitai_commits_total{repo=~\"$repo\",forge=~\"$forge\"}[$window])), 1)",
-          "legendFormat": "__auto",
-          "range": false,
-          "instant": true,
-          "format": "time_series",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 7,
-      "type": "stat",
-      "title": "Repos Reporting",
-      "description": "Repos that produced stats on the last run. A drop here is a pipeline problem, not a coding slowdown.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "victoriametrics"
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 20,
-        "y": 1
-      },
-      "fieldConfig": {
-        "defaults": {
           "unit": "short",
           "decimals": null,
           "color": {
@@ -495,7 +439,78 @@
             "uid": "victoriametrics"
           },
           "editorMode": "code",
-          "expr": "count(last_over_time(gitai_commits_total{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
+          "expr": "count(last_over_time(gitai_commits_with_authorship{repo=~\"$repo\",forge=~\"$forge\"}[$window]) > 0)",
+          "legendFormat": "__auto",
+          "range": false,
+          "instant": true,
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Last Export",
+      "description": "Age of the most recent exporter run. The timer is hourly, so anything over ~2h means the exporter is not running.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": null,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 7200
+              },
+              {
+                "color": "red",
+                "value": 21600
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "editorMode": "code",
+          "expr": "time() - sum(last_over_time(gitai_export_timestamp_seconds[$window]))",
           "legendFormat": "__auto",
           "range": false,
           "instant": true,
@@ -507,7 +522,7 @@
     {
       "id": 8,
       "type": "row",
-      "title": "Composition",
+      "title": "Is the dataset becoming usable?",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -520,8 +535,8 @@
     {
       "id": 9,
       "type": "timeseries",
-      "title": "Line Composition Over Time",
-      "description": "Rolling-window totals. Unattributed dominates early and shrinks in share as attributed commits accumulate.",
+      "title": "Attribution Coverage Over Time",
+      "description": "The question that matters at this stage: is attribution spreading? Absolute line counts mostly track repository size, so coverage is the honest trend to watch.",
       "datasource": {
         "type": "prometheus",
         "uid": "victoriametrics"
@@ -534,7 +549,9 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
+          "unit": "percent",
+          "max": 100,
+          "min": 0,
           "color": {
             "mode": "palette-classic"
           },
@@ -542,13 +559,13 @@
             "drawStyle": "line",
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "fillOpacity": 25,
+            "fillOpacity": 8,
             "gradientMode": "opacity",
             "showPoints": "auto",
             "pointSize": 8,
             "spanNulls": true,
             "stacking": {
-              "mode": "normal",
+              "mode": "none",
               "group": "A"
             },
             "axisSoftMin": 0,
@@ -570,7 +587,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "AI"
+              "options": "Line coverage"
             },
             "properties": [
               {
@@ -585,7 +602,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Human"
+              "options": "Commit coverage"
             },
             "properties": [
               {
@@ -593,21 +610,6 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#C97B2E"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Unattributed"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#8E66BC"
                 }
               }
             ]
@@ -633,8 +635,8 @@
             "uid": "victoriametrics"
           },
           "editorMode": "code",
-          "expr": "sum(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
-          "legendFormat": "AI",
+          "expr": "100 * (sum(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])) + sum(last_over_time(gitai_human_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))) / clamp_min(sum(last_over_time(gitai_diff_added_lines{repo=~\"$repo\",forge=~\"$forge\"}[$window])), 1)",
+          "legendFormat": "Line coverage",
           "range": true,
           "instant": false,
           "format": "time_series",
@@ -646,33 +648,20 @@
             "uid": "victoriametrics"
           },
           "editorMode": "code",
-          "expr": "sum(last_over_time(gitai_human_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
-          "legendFormat": "Human",
+          "expr": "100 * sum(last_over_time(gitai_commits_with_authorship{repo=~\"$repo\",forge=~\"$forge\"}[$window])) / clamp_min(sum(last_over_time(gitai_commits_total{repo=~\"$repo\",forge=~\"$forge\"}[$window])), 1)",
+          "legendFormat": "Commit coverage",
           "range": true,
           "instant": false,
           "format": "time_series",
           "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "victoriametrics"
-          },
-          "editorMode": "code",
-          "expr": "sum(last_over_time(gitai_unknown_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
-          "legendFormat": "Unattributed",
-          "range": true,
-          "instant": false,
-          "format": "time_series",
-          "refId": "C"
         }
       ]
     },
     {
       "id": 10,
       "type": "bargauge",
-      "title": "Current Split",
-      "description": "Same three quantities as now, for reading exact values.",
+      "title": "Line Composition (rolling 30 days)",
+      "description": "Absolute lines by authorship. Unattributed dominates and will keep doing so until 30 days of history are entirely post-install.",
       "datasource": {
         "type": "prometheus",
         "uid": "victoriametrics"
@@ -700,53 +689,7 @@
             ]
           }
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "AI"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#4A78D4"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Human"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#C97B2E"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Unattributed"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#8E66BC"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "options": {
         "displayMode": "gradient",
@@ -820,84 +763,17 @@
     },
     {
       "id": 12,
-      "type": "bargauge",
-      "title": "AI Share of Attributed Lines by Repo",
-      "description": "Only repos with at least one attributed line appear. A repo absent here has no attributed commits yet, which is not the same as 0% AI - check Commit Coverage by Repo to tell those apart.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "victoriametrics"
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 0,
-        "y": 16
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#4A78D4"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "displayMode": "gradient",
-        "orientation": "horizontal",
-        "showUnfilled": true,
-        "valueMode": "text",
-        "minVizHeight": 16,
-        "minVizWidth": 8,
-        "namePlacement": "left",
-        "sizing": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "victoriametrics"
-          },
-          "editorMode": "code",
-          "expr": "100 * sum by(repo)(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])) / clamp_min(sum by(repo)(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])) + sum by(repo)(last_over_time(gitai_human_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])), 1) and on(repo) ((sum by(repo)(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])) + sum by(repo)(last_over_time(gitai_human_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))) > 0)",
-          "legendFormat": "{{repo}}",
-          "range": false,
-          "instant": true,
-          "format": "time_series",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 13,
       "type": "table",
       "title": "Repository Detail",
-      "description": "Per-repo breakdown. 'Stale' marks numbers replayed from cache because the last refresh failed.",
+      "description": "Every percentage sits beside the sample size behind it. Sorted by attributed lines, not by AI share: a repo with three attributed lines can otherwise look authoritative. 'Failed' means git-ai could not produce stats at all; 'Stale' means the numbers are a replayed last-known-good.",
       "datasource": {
         "type": "prometheus",
         "uid": "victoriametrics"
       },
       "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 12,
+        "h": 12,
+        "w": 24,
+        "x": 0,
         "y": 16
       },
       "fieldConfig": {
@@ -923,7 +799,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "AI"
+              "options": "AI Lines"
             },
             "properties": [
               {
@@ -944,7 +820,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Human"
+              "options": "Human Lines"
             },
             "properties": [
               {
@@ -986,6 +862,68 @@
           {
             "matcher": {
               "id": "byName",
+              "options": "AI Share"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "max",
+                "value": 100
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "gradient"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Line Coverage"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "max",
+                "value": 100
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "gradient"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
               "options": "Commit Coverage"
             },
             "properties": [
@@ -995,14 +933,7 @@
               },
               {
                 "id": "decimals",
-                "value": 0
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "gauge",
-                  "mode": "gradient"
-                }
+                "value": 1
               },
               {
                 "id": "max",
@@ -1011,6 +942,13 @@
               {
                 "id": "min",
                 "value": 0
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "gradient"
+                }
               }
             ]
           },
@@ -1027,13 +965,46 @@
                     "type": "value",
                     "options": {
                       "0": {
-                        "text": "ok",
+                        "text": "-",
                         "index": 0
                       },
                       "1": {
                         "text": "STALE",
                         "index": 1,
                         "color": "orange"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Failed"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "-",
+                        "index": 0
+                      },
+                      "1": {
+                        "text": "FAILED",
+                        "index": 1,
+                        "color": "red"
                       }
                     }
                   }
@@ -1057,7 +1028,7 @@
         },
         "sortBy": [
           {
-            "displayName": "AI",
+            "displayName": "Attributed",
             "desc": true
           }
         ]
@@ -1069,7 +1040,7 @@
             "uid": "victoriametrics"
           },
           "editorMode": "code",
-          "expr": "sum by(repo)(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
+          "expr": "(sum by(repo)(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])) + sum by(repo)(last_over_time(gitai_human_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])))",
           "legendFormat": "__auto",
           "range": false,
           "instant": true,
@@ -1082,7 +1053,7 @@
             "uid": "victoriametrics"
           },
           "editorMode": "code",
-          "expr": "sum by(repo)(last_over_time(gitai_human_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
+          "expr": "sum by(repo)(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
           "legendFormat": "__auto",
           "range": false,
           "instant": true,
@@ -1095,7 +1066,7 @@
             "uid": "victoriametrics"
           },
           "editorMode": "code",
-          "expr": "sum by(repo)(last_over_time(gitai_unknown_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
+          "expr": "sum by(repo)(last_over_time(gitai_human_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
           "legendFormat": "__auto",
           "range": false,
           "instant": true,
@@ -1108,7 +1079,7 @@
             "uid": "victoriametrics"
           },
           "editorMode": "code",
-          "expr": "100 * sum by(repo)(last_over_time(gitai_commits_with_authorship{repo=~\"$repo\",forge=~\"$forge\"}[$window])) / clamp_min(sum by(repo)(last_over_time(gitai_commits_total{repo=~\"$repo\",forge=~\"$forge\"}[$window])), 1)",
+          "expr": "sum by(repo)(last_over_time(gitai_unknown_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
           "legendFormat": "__auto",
           "range": false,
           "instant": true,
@@ -1121,12 +1092,64 @@
             "uid": "victoriametrics"
           },
           "editorMode": "code",
-          "expr": "max by(repo)(last_over_time(gitai_stats_stale{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
+          "expr": "100 * sum by(repo)(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])) / clamp_min((sum by(repo)(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])) + sum by(repo)(last_over_time(gitai_human_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))), 1)",
           "legendFormat": "__auto",
           "range": false,
           "instant": true,
           "format": "table",
           "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "editorMode": "code",
+          "expr": "100 * (sum by(repo)(last_over_time(gitai_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])) + sum by(repo)(last_over_time(gitai_human_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))) / clamp_min(sum by(repo)(last_over_time(gitai_diff_added_lines{repo=~\"$repo\",forge=~\"$forge\"}[$window])), 1)",
+          "legendFormat": "__auto",
+          "range": false,
+          "instant": true,
+          "format": "table",
+          "refId": "F"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "editorMode": "code",
+          "expr": "100 * sum by(repo)(last_over_time(gitai_commits_with_authorship{repo=~\"$repo\",forge=~\"$forge\"}[$window])) / clamp_min(sum by(repo)(last_over_time(gitai_commits_total{repo=~\"$repo\",forge=~\"$forge\"}[$window])), 1)",
+          "legendFormat": "__auto",
+          "range": false,
+          "instant": true,
+          "format": "table",
+          "refId": "G"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "editorMode": "code",
+          "expr": "max by(repo)(last_over_time(gitai_stats_stale{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
+          "legendFormat": "__auto",
+          "range": false,
+          "instant": true,
+          "format": "table",
+          "refId": "H"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "editorMode": "code",
+          "expr": "max by(repo)(last_over_time(gitai_repo_failed{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
+          "legendFormat": "__auto",
+          "range": false,
+          "instant": true,
+          "format": "table",
+          "refId": "I"
         }
       ],
       "transformations": [
@@ -1141,27 +1164,36 @@
           "id": "organize",
           "options": {
             "excludeByName": {
-              "Time": true,
               "Time 1": true,
               "Time 2": true,
               "Time 3": true,
               "Time 4": true,
-              "Time 5": true
+              "Time 5": true,
+              "Time 6": true,
+              "Time 7": true,
+              "Time 8": true,
+              "Time 9": true,
+              "Time": true
             },
+            "indexByName": {},
             "renameByName": {
               "repo": "Repository",
-              "Value #A": "AI",
-              "Value #B": "Human",
-              "Value #C": "Unattributed",
-              "Value #D": "Commit Coverage",
-              "Value #E": "Stale"
+              "Value #A": "Attributed",
+              "Value #B": "AI Lines",
+              "Value #C": "Human Lines",
+              "Value #D": "Unattributed",
+              "Value #E": "AI Share",
+              "Value #F": "Line Coverage",
+              "Value #G": "Commit Coverage",
+              "Value #H": "Stale",
+              "Value #I": "Failed"
             }
           }
         }
       ]
     },
     {
-      "id": 14,
+      "id": 13,
       "type": "row",
       "title": "By Tool and Model",
       "collapsed": false,
@@ -1169,31 +1201,32 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 28
       },
       "panels": []
     },
     {
-      "id": 15,
+      "id": 14,
       "type": "bargauge",
-      "title": "AI Lines by Model",
-      "description": "Which model wrote the attributed lines.",
+      "title": "AI Lines by Tool and Model",
+      "description": "Agent-written lines, keeping the tool distinction: the same model reached through different agents is not the same thing.",
       "datasource": {
         "type": "prometheus",
         "uid": "victoriametrics"
       },
       "gridPos": {
-        "h": 9,
-        "w": 12,
+        "h": 8,
+        "w": 8,
         "x": 0,
-        "y": 27
+        "y": 29
       },
       "fieldConfig": {
         "defaults": {
           "unit": "short",
           "min": 0,
           "color": {
-            "mode": "palette-classic"
+            "mode": "fixed",
+            "fixedColor": "#4A78D4"
           },
           "thresholds": {
             "mode": "absolute",
@@ -1229,8 +1262,8 @@
             "uid": "victoriametrics"
           },
           "editorMode": "code",
-          "expr": "sum by(model)(last_over_time(gitai_tool_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
-          "legendFormat": "{{model}}",
+          "expr": "sum by(tool, model)(last_over_time(gitai_tool_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
+          "legendFormat": "{{tool}} / {{model}}",
           "range": false,
           "instant": true,
           "format": "time_series",
@@ -1239,178 +1272,19 @@
       ]
     },
     {
-      "id": 16,
-      "type": "timeseries",
-      "title": "AI Lines by Model Over Time",
-      "description": "Model mix as it shifts.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "victoriametrics"
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 27
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 8,
-            "gradientMode": "opacity",
-            "showPoints": "auto",
-            "pointSize": 8,
-            "spanNulls": true,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            },
-            "axisSoftMin": 0,
-            "scaleDistribution": {
-              "type": "linear"
-            }
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": []
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "victoriametrics"
-          },
-          "editorMode": "code",
-          "expr": "sum by(model)(last_over_time(gitai_tool_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
-          "legendFormat": "{{model}}",
-          "range": true,
-          "instant": false,
-          "format": "time_series",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 17,
-      "type": "row",
-      "title": "Pipeline Health",
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 36
-      },
-      "panels": []
-    },
-    {
-      "id": 18,
-      "type": "stat",
-      "title": "Stale Repos",
-      "description": "Repos serving cached values because their last refresh failed. Alert on this rather than on a metric disappearing: the exporter deliberately keeps publishing the last good numbers.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "victoriametrics"
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 0,
-        "y": 37
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": null,
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto",
-        "wideLayout": true,
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "victoriametrics"
-          },
-          "editorMode": "code",
-          "expr": "sum(last_over_time(gitai_stats_stale{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
-          "legendFormat": "__auto",
-          "range": false,
-          "instant": true,
-          "format": "time_series",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 19,
+      "id": 15,
       "type": "bargauge",
-      "title": "Commit Coverage by Repo",
-      "description": "How much of each repo's recent history carries attribution. This is what separates 'no AI code' from 'attribution never landed'.",
+      "title": "Acceptance by Tool and Model",
+      "description": "Share of agent-written lines that survived into the commit. Expect 100% while the agent both writes and commits; it only moves when a human overwrites agent code before committing, so treat a flat 100% as 'not measuring anything yet' rather than as a quality signal.",
       "datasource": {
         "type": "prometheus",
         "uid": "victoriametrics"
       },
       "gridPos": {
-        "h": 6,
-        "w": 10,
-        "x": 4,
-        "y": 37
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 29
       },
       "fieldConfig": {
         "defaults": {
@@ -1455,8 +1329,8 @@
             "uid": "victoriametrics"
           },
           "editorMode": "code",
-          "expr": "100 * sum by(repo)(last_over_time(gitai_commits_with_authorship{repo=~\"$repo\",forge=~\"$forge\"}[$window])) / clamp_min(sum by(repo)(last_over_time(gitai_commits_total{repo=~\"$repo\",forge=~\"$forge\"}[$window])), 1)",
-          "legendFormat": "{{repo}}",
+          "expr": "100 * sum by(tool, model)(last_over_time(gitai_tool_ai_accepted{repo=~\"$repo\",forge=~\"$forge\"}[$window])) / clamp_min(sum by(tool, model)(last_over_time(gitai_tool_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window])), 1)",
+          "legendFormat": "{{tool}} / {{model}}",
           "range": false,
           "instant": true,
           "format": "time_series",
@@ -1465,23 +1339,24 @@
       ]
     },
     {
-      "id": 20,
+      "id": 16,
       "type": "timeseries",
-      "title": "Repos Reporting",
-      "description": "A sustained drop means the exporter or the collector path broke.",
+      "title": "AI Lines by Tool and Model Over Time",
+      "description": "Model mix as it shifts.",
       "datasource": {
         "type": "prometheus",
         "uid": "victoriametrics"
       },
       "gridPos": {
-        "h": 6,
-        "w": 10,
-        "x": 14,
-        "y": 37
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 29
       },
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "min": 0,
           "color": {
             "mode": "palette-classic"
           },
@@ -1534,8 +1409,166 @@
             "uid": "victoriametrics"
           },
           "editorMode": "code",
-          "expr": "count(last_over_time(gitai_commits_total{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
-          "legendFormat": "repos",
+          "expr": "sum by(tool, model)(last_over_time(gitai_tool_ai_additions{repo=~\"$repo\",forge=~\"$forge\"}[$window]))",
+          "legendFormat": "{{tool}} / {{model}}",
+          "range": true,
+          "instant": false,
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "type": "row",
+      "title": "Export Health",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "panels": []
+    },
+    {
+      "id": 18,
+      "type": "bargauge",
+      "title": "Repos by Outcome (last run)",
+      "description": "Every repo the exporter considered, by what happened to it. 'no_commits' means nothing landed in the 30-day window - normal for dormant repos. 'known_failing' repos are skipped deliberately: their history is too large to walk inside the timeout.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 10,
+        "x": 0,
+        "y": 38
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "showUnfilled": true,
+        "valueMode": "text",
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "left",
+        "sizing": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "editorMode": "code",
+          "expr": "sum by(outcome)(last_over_time(gitai_export_repos[$window]))",
+          "legendFormat": "{{outcome}}",
+          "range": false,
+          "instant": true,
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "type": "timeseries",
+      "title": "Repos by Outcome Over Time",
+      "description": "A change in shape here explains a change anywhere else on the dashboard. This is the panel to check first when a number moves unexpectedly.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 14,
+        "x": 10,
+        "y": 38
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "showPoints": "auto",
+            "pointSize": 8,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "axisSoftMin": 0,
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "editorMode": "code",
+          "expr": "sum by(outcome)(last_over_time(gitai_export_repos[$window]))",
+          "legendFormat": "{{outcome}}",
           "range": true,
           "instant": false,
           "format": "time_series",

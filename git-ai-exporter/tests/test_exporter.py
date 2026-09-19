@@ -326,6 +326,76 @@ class TestExclusion(unittest.TestCase):
         self.assertEqual(sorted(self.seen), ["obsidian", "realcode"])
 
 
+class TestRunHealth(unittest.TestCase):
+    """Health must be stated per repo, never inferred from a missing series."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        for n in ("good", "broken", "skipme"):
+            (root / n / ".git").mkdir(parents=True)
+        self._saved = (exporter.ROOT, exporter.CACHE, exporter.stats,
+                       exporter.window_range, exporter.git, exporter.forge_of,
+                       exporter.EXCLUDE)
+        exporter.ROOT = root
+        exporter.CACHE = root / "c.json"
+        exporter.window_range = lambda repo: "a..HEAD"
+        exporter.git = lambda repo, *a: "sha"
+        exporter.forge_of = lambda repo: "example.com"
+        exporter.EXCLUDE = ["skipme"]
+        exporter.stats = lambda repo, rng: (
+            None if repo.name == "broken" else {"range_stats": {"ai_additions": 5}})
+
+    def tearDown(self):
+        (exporter.ROOT, exporter.CACHE, exporter.stats, exporter.window_range,
+         exporter.git, exporter.forge_of, exporter.EXCLUDE) = self._saved
+        self.tmp.cleanup()
+
+    def payload(self):
+        argv = sys.argv
+        sys.argv = ["exporter.py", "--dry-run"]
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf), \
+                 contextlib.redirect_stderr(io.StringIO()):
+                exporter.main()
+        finally:
+            sys.argv = argv
+        return json.loads(buf.getvalue())
+
+    @staticmethod
+    def points(payload, name):
+        for m in payload["resourceMetrics"][0]["scopeMetrics"][0]["metrics"]:
+            if m["name"] == name:
+                return {tuple(sorted((a["key"], a["value"]["stringValue"])
+                                     for a in p["attributes"])): int(p["asInt"])
+                        for p in m["gauge"]["dataPoints"]}
+        return {}
+
+    def test_failing_repo_still_reports_health(self):
+        """Regression: a never-succeeded repo used to emit nothing at all."""
+        pts = self.points(self.payload(), "gitai_repo_failed")
+        byrepo = {dict(k)["repo"]: v for k, v in pts.items()}
+        self.assertEqual(byrepo.get("broken"), 1, "failing repo must be visible")
+        self.assertEqual(byrepo.get("good"), 0)
+
+    def test_excluded_repo_emits_no_health(self):
+        pts = self.points(self.payload(), "gitai_repo_failed")
+        self.assertNotIn("skipme", {dict(k)["repo"] for k in pts})
+
+    def test_outcome_counts(self):
+        pts = self.points(self.payload(), "gitai_export_repos")
+        by = {dict(k)["outcome"]: v for k, v in pts.items()}
+        self.assertEqual(by["fresh"], 1)
+        self.assertEqual(by["failed"], 1)
+        self.assertEqual(by["excluded"], 1)
+
+    def test_run_timestamp_emitted(self):
+        pts = self.points(self.payload(), "gitai_export_timestamp_seconds")
+        self.assertEqual(len(pts), 1)
+        self.assertGreater(list(pts.values())[0], 1_700_000_000)
+
+
 class TestOtlpShape(unittest.TestCase):
     def test_no_unit_field(self):
         """unit "1" makes the Prometheus translation append `_ratio`."""
