@@ -1,0 +1,34 @@
+.gitignore
+  s_1150d6ec0948e6::t_a3cab23dc121da 8
+.pre-commit-config.yaml
+  s_1150d6ec0948e6::t_953d2d19e6d92e 1-26
+.sensitive-patterns.example
+  s_1150d6ec0948e6::t_424b6a393d4c52 1-6
+CLAUDE.md
+  s_1150d6ec0948e6::t_c3b8da33b6731e 94-105
+scripts/check_no_sensitive.py
+  s_1150d6ec0948e6::t_ea28b6772d79bd 1-98
+scripts/tests/test_check_no_sensitive.py
+  s_1150d6ec0948e6::t_7d14d37008d9f4 1-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9612c33b9d22200c0adeeb1ef604dc5d52c13c8a",
+  "prompts": {},
+  "humans": {
+    "h_a33a1e80933106": {
+      "author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  },
+  "sessions": {
+    "s_1150d6ec0948e6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2beefc40-498f-4d8c-ad23-6c6db23f1f61",
+        "model": "claude-opus-5"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
