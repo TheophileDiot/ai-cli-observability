@@ -1,0 +1,19 @@
+grafana/dashboards/git-ai-attribution.json
+  s_1150d6ec0948e6::t_d53b0fd3783fbd 5-10,173-175,246-248,312-314,378-380,443-445,516-518,709-755,767-769,1284,1318-1320,1352-1353,1387-1389,1420-1423,1499,1516,1547-1549,1583
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7ca7d4a7f4ee3f9d8aabda091f943c4fc5da3303",
+  "prompts": {},
+  "sessions": {
+    "s_1150d6ec0948e6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2beefc40-498f-4d8c-ad23-6c6db23f1f61",
+        "model": "claude-opus-5"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
