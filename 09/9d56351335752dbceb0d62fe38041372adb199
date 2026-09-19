@@ -1,0 +1,16 @@
+git-ai-exporter/exporter.py
+  h_a33a1e80933106 166,177-182,188,215-216,224-225
+git-ai-exporter/tests/test_exporter.py
+  h_a33a1e80933106 8-10,107-165
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "099d56351335752dbceb0d62fe38041372adb199",
+  "prompts": {},
+  "humans": {
+    "h_a33a1e80933106": {
+      "author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
