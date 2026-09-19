@@ -163,7 +163,7 @@ def save_cache(cache):
 
 def main():
     dry = "--dry-run" in sys.argv
-    payloads, scanned, fresh = {}, 0, 0
+    payloads, scanned, fresh, skipped = {}, 0, 0, 0
     cache = load_cache()
     now = time.time()
     for gitdir in sorted(ROOT.glob("*/.git")):
@@ -174,11 +174,18 @@ def main():
         head = git(repo, "rev-parse", "HEAD")
         hit = cache.get(str(repo))
         if hit and hit.get("head") == head and now - hit.get("at", 0) < CACHE_TTL:
+            # Failures are cached too. A repo whose history is too large to walk
+            # inside the timeout fails identically every run, so retrying it
+            # hourly burns the full timeout forever for no new data.
+            if hit.get("failed"):
+                skipped += 1
+                continue
             data = hit["data"]
         else:
             data = stats(repo, rng)
             if data is None:
                 print(f"warn: stats failed for {repo.name}", file=sys.stderr)
+                cache[str(repo)] = {"head": head, "at": now, "failed": True}
                 continue
             cache[str(repo)] = {"head": head, "at": now, "data": data}
             fresh += 1
@@ -205,8 +212,8 @@ def main():
 
     if dry:
         json.dump(body, sys.stdout, indent=2)
-        print(f"\n{scanned} repos ({fresh} recomputed), {len(payloads)} metrics",
-              file=sys.stderr)
+        print(f"\n{scanned} repos ({fresh} recomputed, {skipped} known-failing), "
+              f"{len(payloads)} metrics", file=sys.stderr)
         return 0
 
     url, hdrs = otel_config()
@@ -214,8 +221,8 @@ def main():
         url, data=json.dumps(body).encode(),
         headers={"Content-Type": "application/json", **hdrs})
     with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
-        print(f"{resp.status} — {scanned} repos ({fresh} recomputed), "
-              f"{len(payloads)} metrics")
+        print(f"{resp.status} — {scanned} repos ({fresh} recomputed, "
+              f"{skipped} known-failing), {len(payloads)} metrics")
     return 0
 
 

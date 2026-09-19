@@ -5,6 +5,9 @@ Run: cd git-ai-exporter/tests && PYTHONPATH=.. python3 -m unittest test_exporter
 
 import subprocess
 import sys
+import contextlib
+import io
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -99,6 +102,65 @@ class TestFailureIsolation(unittest.TestCase):
             self.assertEqual(exporter.git(Path("/nonexistent"), "rev-parse"), "")
         finally:
             exporter.subprocess.run = orig
+
+
+class TestNegativeCache(unittest.TestCase):
+    """A repo too large to walk inside the timeout fails identically every run.
+
+    Without a cached failure the exporter pays the full timeout for it on every
+    tick, so the retry must stop until HEAD moves.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        (root / "slowrepo" / ".git").mkdir(parents=True)
+        self.cache = root / "cache.json"
+        self.calls = []
+
+        self._saved = (exporter.ROOT, exporter.CACHE, exporter.stats,
+                       exporter.window_range, exporter.git, exporter.forge_of)
+        exporter.ROOT = root
+        exporter.CACHE = self.cache
+        exporter.window_range = lambda repo: "base..HEAD"
+        exporter.git = lambda repo, *a: "deadbeef"
+        exporter.forge_of = lambda repo: "example.com"
+
+        def failing_stats(repo, rng):
+            self.calls.append(repo)
+            return None
+
+        exporter.stats = failing_stats
+
+    def run_once(self):
+        """Invoke a dry run, swallowing the payload it prints to stdout."""
+        argv = sys.argv
+        sys.argv = ["exporter.py", "--dry-run"]
+        try:
+            with contextlib.redirect_stdout(io.StringIO()), \
+                 contextlib.redirect_stderr(io.StringIO()):
+                exporter.main()
+        finally:
+            sys.argv = argv
+
+    def tearDown(self):
+        (exporter.ROOT, exporter.CACHE, exporter.stats,
+         exporter.window_range, exporter.git, exporter.forge_of) = self._saved
+        self.tmp.cleanup()
+
+    def test_failing_repo_is_not_retried(self):
+        self.run_once()
+        self.assertEqual(len(self.calls), 1, "first run should attempt the repo")
+        self.run_once()
+        self.assertEqual(len(self.calls), 1,
+                         "second run retried a known-failing repo")
+
+    def test_failure_is_retried_when_head_moves(self):
+        self.run_once()
+        exporter.git = lambda repo, *a: "cafebabe"   # new HEAD
+        self.run_once()
+        self.assertEqual(len(self.calls), 2,
+                         "a moved HEAD must invalidate the cached failure")
 
 
 if __name__ == "__main__":
