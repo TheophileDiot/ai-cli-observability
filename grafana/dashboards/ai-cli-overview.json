@@ -12,38 +12,6 @@
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
-      },
-      {
-        "builtIn": 0,
-        "datasource": {
-          "type": "prometheus",
-          "uid": "victoriametrics"
-        },
-        "enable": true,
-        "expr": "hermes_ai_credit_reset_timestamp_seconds{cli=\"claude\"} * 1000",
-        "hide": false,
-        "iconColor": "#FF9830",
-        "name": "Credit Reset",
-        "textFormat": "Credits Reset",
-        "titleFormat": "Credit Reset",
-        "type": "tags",
-        "useValueForTime": true
-      },
-      {
-        "builtIn": 0,
-        "datasource": {
-          "type": "prometheus",
-          "uid": "victoriametrics"
-        },
-        "enable": true,
-        "expr": "hermes_ai_credit_reset_timestamp_seconds{cli=\"codex\"} * 1000",
-        "hide": false,
-        "iconColor": "#10A37F",
-        "name": "Codex Credit Reset",
-        "textFormat": "Codex Credits Reset",
-        "titleFormat": "Codex Credit Reset",
-        "type": "tags",
-        "useValueForTime": true
       }
     ]
   },
@@ -409,144 +377,12 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "victoriametrics"
-      },
-      "description": "Countdown to next Anthropic credit reset (5h cycle, anchor UTC 02:00).",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red"
-              },
-              {
-                "color": "orange",
-                "value": 600
-              },
-              {
-                "color": "green",
-                "value": 1800
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 0,
-        "y": 5
-      },
-      "id": 91,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value_and_name"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "victoriametrics"
-          },
-          "expr": "(18000 - ((vector(time()) - ${reset_offset}) % 18000)) % 18000",
-          "legendFormat": "Claude",
-          "refId": "A"
-        }
-      ],
-      "title": "Claude — Next Credit Reset",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "victoriametrics"
-      },
-      "description": "Countdown to next Codex (OpenAI) credit reset (5h cycle, anchor UTC 03:55).",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red"
-              },
-              {
-                "color": "orange",
-                "value": 600
-              },
-              {
-                "color": "#10A37F",
-                "value": 1800
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 12,
-        "y": 5
-      },
-      "id": 92,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value_and_name"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "victoriametrics"
-          },
-          "expr": "(18000 - ((vector(time()) - ${codex_reset_offset}) % 18000)) % 18000",
-          "legendFormat": "Codex",
-          "refId": "A"
-        }
-      ],
-      "title": "Codex — Next Credit Reset",
-      "type": "stat"
-    },
-    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 5
       },
       "id": 10,
       "title": "All Agents — Trends",
@@ -579,7 +415,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 10
+        "y": 6
       },
       "id": 11,
       "options": {
@@ -667,7 +503,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 10
+        "y": 6
       },
       "id": 12,
       "interval": "1m",
@@ -799,7 +635,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 10
+        "y": 6
       },
       "id": 13,
       "options": {
@@ -837,7 +673,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 14
       },
       "id": 20,
       "title": "All Agents — Efficiency & Reliability",
@@ -923,7 +759,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 15
       },
       "id": 14,
       "options": {
@@ -1001,7 +837,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 19
+        "y": 15
       },
       "id": 15,
       "interval": "1m",
@@ -1090,7 +926,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 23
       },
       "id": 60,
       "title": "All Agents — Breakdown",
@@ -1115,7 +951,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 28
+        "y": 24
       },
       "id": 61,
       "options": {
@@ -1192,7 +1028,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 28
+        "y": 24
       },
       "id": 62,
       "options": {
@@ -1279,7 +1115,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 28
+        "y": 24
       },
       "id": 63,
       "interval": "1m",
@@ -1317,7 +1153,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 32
       },
       "id": 64,
       "title": "All Agents — Summary Stats",
@@ -1348,7 +1184,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 37
+        "y": 33
       },
       "id": 16,
       "options": {
@@ -1408,7 +1244,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 37
+        "y": 33
       },
       "id": 17,
       "options": {
@@ -1461,7 +1297,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 37
+        "y": 33
       },
       "id": 19,
       "options": {
@@ -1522,7 +1358,7 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 37
+        "y": 33
       },
       "id": 21,
       "options": {
@@ -1575,7 +1411,7 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 37
+        "y": 33
       },
       "id": 22,
       "options": {
@@ -1628,7 +1464,7 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 37
+        "y": 33
       },
       "id": 23,
       "options": {
@@ -1681,7 +1517,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 41
+        "y": 37
       },
       "id": 65,
       "options": {
@@ -1733,7 +1569,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 41
+        "y": 37
       },
       "id": 66,
       "options": {
@@ -1793,7 +1629,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 41
+        "y": 37
       },
       "id": 67,
       "options": {
@@ -1847,7 +1683,7 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 41
+        "y": 37
       },
       "id": 68,
       "options": {
@@ -1900,7 +1736,7 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 41
+        "y": 37
       },
       "id": 69,
       "options": {
@@ -1961,7 +1797,7 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 41
+        "y": 37
       },
       "id": 70,
       "options": {
@@ -1995,7 +1831,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 41
       },
       "id": 24,
       "panels": [
@@ -2009,7 +1845,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 45
+            "y": 41
           },
           "id": 25,
           "targets": [
@@ -2044,7 +1880,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 45
+            "y": 41
           },
           "id": 26,
           "options": {
@@ -2109,7 +1945,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 53
+        "y": 49
       },
       "id": 100,
       "panels": [
@@ -2145,7 +1981,7 @@
             "h": 4,
             "w": 4,
             "x": 0,
-            "y": 54
+            "y": 50
           },
           "id": 107,
           "options": {
@@ -2197,7 +2033,7 @@
             "h": 4,
             "w": 4,
             "x": 4,
-            "y": 54
+            "y": 50
           },
           "id": 108,
           "options": {
@@ -2257,7 +2093,7 @@
             "h": 4,
             "w": 4,
             "x": 8,
-            "y": 54
+            "y": 50
           },
           "id": 109,
           "options": {
@@ -2317,7 +2153,7 @@
             "h": 4,
             "w": 4,
             "x": 12,
-            "y": 54
+            "y": 50
           },
           "id": 110,
           "options": {
@@ -2369,7 +2205,7 @@
             "h": 4,
             "w": 4,
             "x": 16,
-            "y": 54
+            "y": 50
           },
           "id": 111,
           "options": {
@@ -2421,7 +2257,7 @@
             "h": 4,
             "w": 4,
             "x": 20,
-            "y": 54
+            "y": 50
           },
           "id": 112,
           "options": {
@@ -2471,7 +2307,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 58
+            "y": 54
           },
           "id": 101,
           "interval": "1m",
@@ -2524,7 +2360,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 58
+            "y": 54
           },
           "id": 102,
           "interval": "1m",
@@ -2601,7 +2437,7 @@
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 66
+            "y": 62
           },
           "id": 103,
           "interval": "1m",
@@ -2646,7 +2482,7 @@
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 66
+            "y": 62
           },
           "id": 104,
           "options": {
@@ -2704,7 +2540,7 @@
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 66
+            "y": 62
           },
           "id": 105,
           "interval": "1m",
@@ -2749,7 +2585,7 @@
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 74
+            "y": 70
           },
           "id": 106,
           "options": {
@@ -2785,7 +2621,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 54
+        "y": 50
       },
       "id": 40,
       "panels": [
@@ -2821,7 +2657,7 @@
             "h": 4,
             "w": 4,
             "x": 0,
-            "y": 55
+            "y": 51
           },
           "id": 113,
           "options": {
@@ -2873,7 +2709,7 @@
             "h": 4,
             "w": 4,
             "x": 4,
-            "y": 55
+            "y": 51
           },
           "id": 114,
           "options": {
@@ -2933,7 +2769,7 @@
             "h": 4,
             "w": 4,
             "x": 8,
-            "y": 55
+            "y": 51
           },
           "id": 115,
           "options": {
@@ -2993,7 +2829,7 @@
             "h": 4,
             "w": 4,
             "x": 12,
-            "y": 55
+            "y": 51
           },
           "id": 116,
           "options": {
@@ -3045,7 +2881,7 @@
             "h": 4,
             "w": 4,
             "x": 16,
-            "y": 55
+            "y": 51
           },
           "id": 117,
           "options": {
@@ -3097,7 +2933,7 @@
             "h": 4,
             "w": 4,
             "x": 20,
-            "y": 55
+            "y": 51
           },
           "id": 118,
           "options": {
@@ -3147,7 +2983,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 59
+            "y": 55
           },
           "id": 41,
           "options": {
@@ -3246,7 +3082,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 59
+            "y": 55
           },
           "id": 75,
           "options": {
@@ -3301,7 +3137,7 @@
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 67
+            "y": 63
           },
           "id": 76,
           "options": {
@@ -3365,7 +3201,7 @@
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 67
+            "y": 63
           },
           "id": 77,
           "options": {
@@ -3420,7 +3256,7 @@
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 67
+            "y": 63
           },
           "id": 78,
           "options": {
@@ -3475,7 +3311,7 @@
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 67
+            "y": 63
           },
           "id": 79,
           "options": {
@@ -3530,7 +3366,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 75
+            "y": 71
           },
           "id": 80,
           "options": {
@@ -3585,7 +3421,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 75
+            "y": 71
           },
           "id": 81,
           "options": {
@@ -3632,7 +3468,7 @@
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 83
+            "y": 79
           },
           "id": 82,
           "options": {
@@ -3668,7 +3504,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 55
+        "y": 51
       },
       "id": 83,
       "panels": [
@@ -3704,7 +3540,7 @@
             "h": 4,
             "w": 4,
             "x": 0,
-            "y": 56
+            "y": 52
           },
           "id": 119,
           "options": {
@@ -3756,7 +3592,7 @@
             "h": 4,
             "w": 4,
             "x": 4,
-            "y": 56
+            "y": 52
           },
           "id": 120,
           "options": {
@@ -3816,7 +3652,7 @@
             "h": 4,
             "w": 4,
             "x": 8,
-            "y": 56
+            "y": 52
           },
           "id": 121,
           "options": {
@@ -3876,7 +3712,7 @@
             "h": 4,
             "w": 4,
             "x": 12,
-            "y": 56
+            "y": 52
           },
           "id": 122,
           "options": {
@@ -3928,7 +3764,7 @@
             "h": 4,
             "w": 4,
             "x": 16,
-            "y": 56
+            "y": 52
           },
           "id": 123,
           "options": {
@@ -3980,7 +3816,7 @@
             "h": 4,
             "w": 4,
             "x": 20,
-            "y": 56
+            "y": 52
           },
           "id": 124,
           "options": {
@@ -4029,7 +3865,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 76
+            "y": 72
           },
           "id": 31,
           "options": {
@@ -4072,7 +3908,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 76
+            "y": 72
           },
           "id": 32,
           "options": {
@@ -4116,7 +3952,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 60
+            "y": 56
           },
           "id": 84,
           "options": {
@@ -4197,7 +4033,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 60
+            "y": 56
           },
           "id": 85,
           "options": {
@@ -4252,7 +4088,7 @@
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 68
+            "y": 64
           },
           "id": 86,
           "options": {
@@ -4307,7 +4143,7 @@
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 68
+            "y": 64
           },
           "id": 87,
           "options": {
@@ -4367,7 +4203,7 @@
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 68
+            "y": 64
           },
           "id": 88,
           "options": {
@@ -4419,7 +4255,7 @@
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 68
+            "y": 64
           },
           "id": 89,
           "options": {
@@ -4474,7 +4310,7 @@
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 84
+            "y": 80
           },
           "id": 90,
           "options": {
@@ -4510,7 +4346,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 56
+        "y": 52
       },
       "id": 50,
       "panels": [
@@ -4524,7 +4360,7 @@
             "h": 10,
             "w": 12,
             "x": 0,
-            "y": 56
+            "y": 52
           },
           "id": 51,
           "targets": [
@@ -4551,7 +4387,7 @@
             "h": 10,
             "w": 12,
             "x": 12,
-            "y": 56
+            "y": 52
           },
           "id": 52,
           "targets": [
@@ -4607,48 +4443,6 @@
         "regex": "",
         "sort": 1,
         "type": "query"
-      },
-      {
-        "description": "Epoch offset for the 5-hour credit reset cycle (anchor % 18000). Derived from a known reset at 2026-04-08T13:00:00Z. Adjust if the cycle shifts.",
-        "hide": 2,
-        "label": "Reset offset (s)",
-        "name": "reset_offset",
-        "query": "7200",
-        "skipUrlSync": true,
-        "type": "constant",
-        "current": {
-          "value": "7200",
-          "text": "7200",
-          "selected": false
-        },
-        "options": [
-          {
-            "value": "7200",
-            "text": "7200",
-            "selected": false
-          }
-        ]
-      },
-      {
-        "description": "Epoch offset for the Codex 5-hour credit reset cycle (anchor % 18000). Mirrors CODEX_RESET_OFFSET_SECONDS in hermes-exporter.",
-        "hide": 2,
-        "label": "Codex reset offset (s)",
-        "name": "codex_reset_offset",
-        "query": "14100",
-        "skipUrlSync": true,
-        "type": "constant",
-        "current": {
-          "value": "14100",
-          "text": "14100",
-          "selected": false
-        },
-        "options": [
-          {
-            "value": "14100",
-            "text": "14100",
-            "selected": false
-          }
-        ]
       },
       {
         "allowCustomValue": true,
