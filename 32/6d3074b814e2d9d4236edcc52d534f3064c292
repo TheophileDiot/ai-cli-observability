@@ -1,0 +1,21 @@
+pricing-exporter/pyproject.toml
+  s_c672ef9aa789ea::t_b1680658d66f4c 7
+pricing-exporter/uv.lock
+  s_c672ef9aa789ea::t_00e49368f16dce 16,27,29-92,146-173,567-575,605,609,618,623,625-631,816-830,968-981,991-1002,1227-1238,1248-1256
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "326d3074b814e2d9d4236edcc52d534f3064c292",
+  "prompts": {},
+  "sessions": {
+    "s_c672ef9aa789ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1944173c-7fa4-4768-86df-85eda8fc36f0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
