@@ -43,7 +43,7 @@ docker compose ps
 ```
 
 Open <http://localhost:3000>, sign in with `admin` and your Grafana password,
-then connect a client below. Grafana provisions the dashboard and all three
+then connect a client below. Grafana provisions both dashboards and all three
 datasources automatically.
 
 > [!NOTE]
@@ -53,7 +53,8 @@ datasources automatically.
 
 ## What ships
 
-- A ready-to-use `AI CLI Tools - Overview` Grafana dashboard
+- A ready-to-use [`AI CLI Tools - Overview`](https://grafana.com/grafana/dashboards/25645) Grafana dashboard
+- A [`Git AI - Code Attribution`](https://grafana.com/grafana/dashboards/25803) dashboard, fed by the optional [git-ai exporter](git-ai-exporter/)
 - Logs, metrics, and traces stored in the VictoriaMetrics stack
 - Client examples for Codex, Claude Code, and Gemini CLI
 - Collector-side Codex and Gemini cost estimation
@@ -167,6 +168,14 @@ signal paths. Do not expose unauthenticated OTLP over plain HTTP.
 
 ## Dashboard
 
+Both dashboards are published on Grafana.com and can be imported by ID into any
+Grafana instance:
+
+| Dashboard                                                                 | Grafana.com ID |
+| ------------------------------------------------------------------------- | -------------- |
+| [AI CLI Tools - Overview](https://grafana.com/grafana/dashboards/25645)   | `25645`        |
+| [Git AI - Code Attribution](https://grafana.com/grafana/dashboards/25803) | `25803`        |
+
 The main dashboard combines:
 
 - LogsQL over immutable request and tool events in VictoriaLogs
@@ -174,11 +183,7 @@ The main dashboard combines:
 - Pricing enrichment attributes added by the collector
 
 Traces are available through the provisioned VictoriaTraces datasource in
-Grafana Explore. The core dashboard also includes configurable Claude and
-Codex five-hour credit-reset countdowns. The hidden `reset_offset` and
-`codex_reset_offset` variables are UTC-midnight offsets in seconds; adjust
-their `7200` and `14100` defaults to match the account's reset anchors. These
-countdowns are local estimates, not provider telemetry.
+Grafana Explore.
 
 The optional [`extras/credit-resets`](extras/credit-resets/) dashboard expects
 a separate custom metric and stays outside automatic provisioning when exact
@@ -205,14 +210,14 @@ raw API response. Grafana documents the current process in
 Claude Code emits native cost data. Codex and Gemini estimates are calculated
 from token events and model prices supplied by the pinned LiteLLM data set,
 with explicit official overrides for missing models and stale prices (verified
-2026-09-08). The pricing
+2026-09-23). The pricing
 exporter also records pricing history in SQLite and exposes the USD-to-EUR rate
 to VictoriaMetrics.
 
-Codex pricing covers GPT-6 Astra and GPT-5.6 Sol, Terra, and Luna, including
+Codex pricing covers GPT-6 Astra, Sol, and Luna and GPT-5.6 Sol, Terra, and Luna, including
 cache writes, Fast/Priority, Flex, and long-context charges. Earlier supported
 models retain their existing rules. Unknown internal aliases remain unsupported.
-Claude Fable 5.1, Opus 5, and Sonnet 5 are included in the price catalog; Claude
+Claude Fable 5.1, Opus 5.5, Opus 5, and Sonnet 5 are included in the price catalog; Claude
 request costs retain their native values without an extra promotion multiplier.
 Sonnet 5's $2/$10 per million input/output token price is now permanent.
 

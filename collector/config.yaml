@@ -26,7 +26,7 @@ processors:
           - set(attributes["session_source"], "unknown") where attributes["event.name"] == "codex.conversation_starts" and attributes["session_source"] == ""
           - set(attributes["effective_cost_usd"], attributes["cost_usd"]) where attributes["cost_usd"] != nil
           - set(attributes["cost_source"], "native") where attributes["cost_usd"] != nil
-          - set(attributes["pricing_as_of"], "2026-09-08") where attributes["cost_usd"] != nil
+          - set(attributes["pricing_as_of"], "2026-09-23") where attributes["cost_usd"] != nil
           # Standard prices come from pricing-exporter. Tier multipliers follow:
           # https://developers.openai.com/api/docs/models and https://developers.openai.com/api/docs/guides/fast-mode
           - set(attributes["cached_token_count"], 0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cached_token_count"] == nil
@@ -47,6 +47,12 @@ processors:
           - set(cache["input_price"], ${file:/pricing/GPT6_ASTRA_IN}) where IsMatch(attributes["model"], "^gpt-6-astra($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
           - set(cache["cached_price"], ${file:/pricing/GPT6_ASTRA_CACHED}) where IsMatch(attributes["model"], "^gpt-6-astra($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
           - set(cache["output_price"], ${file:/pricing/GPT6_ASTRA_OUT}) where IsMatch(attributes["model"], "^gpt-6-astra($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          - set(cache["input_price"], ${file:/pricing/GPT6_SOL_IN}) where IsMatch(attributes["model"], "^gpt-6-sol($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          - set(cache["cached_price"], ${file:/pricing/GPT6_SOL_CACHED}) where IsMatch(attributes["model"], "^gpt-6-sol($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          - set(cache["output_price"], ${file:/pricing/GPT6_SOL_OUT}) where IsMatch(attributes["model"], "^gpt-6-sol($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          - set(cache["input_price"], ${file:/pricing/GPT6_LUNA_IN}) where IsMatch(attributes["model"], "^gpt-6-luna($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          - set(cache["cached_price"], ${file:/pricing/GPT6_LUNA_CACHED}) where IsMatch(attributes["model"], "^gpt-6-luna($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
+          - set(cache["output_price"], ${file:/pricing/GPT6_LUNA_OUT}) where IsMatch(attributes["model"], "^gpt-6-luna($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
           - set(cache["input_price"], ${file:/pricing/GPT56_SOL_IN}) where IsMatch(attributes["model"], "^gpt-5\\.6(-sol)?($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
           - set(cache["cached_price"], ${file:/pricing/GPT56_SOL_CACHED}) where IsMatch(attributes["model"], "^gpt-5\\.6(-sol)?($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
           - set(cache["output_price"], ${file:/pricing/GPT56_SOL_OUT}) where IsMatch(attributes["model"], "^gpt-5\\.6(-sol)?($|-[0-9]{4}-[0-9]{2}-[0-9]{2}$)")
@@ -70,9 +76,9 @@ processors:
           - set(attributes["cost_usd_estimated"], ((Double(attributes["input_token_count"]) - Double(attributes["cached_token_count"])) * ${file:/pricing/GPT53_CODEX_IN} + Double(attributes["cached_token_count"]) * ${file:/pricing/GPT53_CODEX_CACHED} + Double(attributes["output_token_count"]) * ${file:/pricing/GPT53_CODEX_OUT}) / 1000000.0) where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["cost_usd"] == nil and attributes["cost_usd_estimated"] == nil and attributes["input_token_count"] != nil and attributes["output_token_count"] != nil and IsMatch(attributes["model"], "^gpt-5\\.[23]-codex($|-)")
           - set(attributes["effective_cost_usd"], attributes["cost_usd_estimated"]) where attributes["cost_usd_estimated"] != nil and attributes["cost_usd"] == nil
           - set(attributes["cost_source"], "estimated") where attributes["cost_usd_estimated"] != nil and attributes["cost_usd"] == nil
-          - set(attributes["pricing_as_of"], "2026-09-08") where attributes["cost_usd_estimated"] != nil and attributes["cost_usd"] == nil
+          - set(attributes["pricing_as_of"], "2026-09-23") where attributes["cost_usd_estimated"] != nil and attributes["cost_usd"] == nil
           - set(attributes["cost_source"], "unsupported") where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["effective_cost_usd"] == nil
-          - set(attributes["pricing_as_of"], "2026-09-08") where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["effective_cost_usd"] == nil
+          - set(attributes["pricing_as_of"], "2026-09-23") where attributes["event.name"] == "codex.sse_event" and attributes["event.kind"] == "response.completed" and attributes["effective_cost_usd"] == nil
   transform/gemini_enrichment:
     error_mode: ignore
     log_statements:

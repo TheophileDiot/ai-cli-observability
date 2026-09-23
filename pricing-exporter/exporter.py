@@ -28,7 +28,7 @@ def _load_model_cost() -> dict[str, Any]:
 
 model_cost = _load_model_cost()
 
-# Verified 2026-09-08. Override stale fields as well as missing models in the
+# Verified 2026-09-23. Override stale fields as well as missing models in the
 # pinned, offline LiteLLM map. These are standard USD prices per token.
 # https://developers.openai.com/api/docs/pricing
 # https://platform.claude.com/docs/en/about-claude/pricing
@@ -38,6 +38,18 @@ OFFICIAL_PRICE_OVERRIDES: dict[str, dict[str, Any]] = {
         "input_cost_per_token": 10e-6,
         "cache_read_input_token_cost": 1e-6,
         "output_cost_per_token": 50e-6,
+    },
+    "gpt-6-sol": {
+        "litellm_provider": "openai",
+        "input_cost_per_token": 2e-6,
+        "cache_read_input_token_cost": 0.2e-6,
+        "output_cost_per_token": 10e-6,
+    },
+    "gpt-6-luna": {
+        "litellm_provider": "openai",
+        "input_cost_per_token": 0.1e-6,
+        "cache_read_input_token_cost": 0.01e-6,
+        "output_cost_per_token": 0.5e-6,
     },
     "gpt-5.6-terra": {
         "litellm_provider": "openai",
@@ -62,6 +74,12 @@ OFFICIAL_PRICE_OVERRIDES: dict[str, dict[str, Any]] = {
         "input_cost_per_token": 10e-6,
         "cache_read_input_token_cost": 0.25e-6,
         "output_cost_per_token": 50e-6,
+    },
+    "claude-opus-5-5": {
+        "litellm_provider": "anthropic",
+        "input_cost_per_token": 4e-6,
+        "cache_read_input_token_cost": 0.2e-6,
+        "output_cost_per_token": 20e-6,
     },
     "claude-opus-5": {
         "litellm_provider": "anthropic",
@@ -225,6 +243,12 @@ OTEL_ENV_MAP: dict[str, tuple[str, str, str]] = {
     "GPT6_ASTRA_IN": ("gpt-6-astra", "openai", "input"),
     "GPT6_ASTRA_CACHED": ("gpt-6-astra", "openai", "cached"),
     "GPT6_ASTRA_OUT": ("gpt-6-astra", "openai", "output"),
+    "GPT6_SOL_IN": ("gpt-6-sol", "openai", "input"),
+    "GPT6_SOL_CACHED": ("gpt-6-sol", "openai", "cached"),
+    "GPT6_SOL_OUT": ("gpt-6-sol", "openai", "output"),
+    "GPT6_LUNA_IN": ("gpt-6-luna", "openai", "input"),
+    "GPT6_LUNA_CACHED": ("gpt-6-luna", "openai", "cached"),
+    "GPT6_LUNA_OUT": ("gpt-6-luna", "openai", "output"),
     "GPT53_CODEX_IN": ("gpt-5.3-codex", "openai", "input"),
     "GPT53_CODEX_CACHED": ("gpt-5.3-codex", "openai", "cached"),
     "GPT53_CODEX_OUT": ("gpt-5.3-codex", "openai", "output"),

@@ -4,6 +4,11 @@ Exports [git-ai](https://github.com/git-ai-project/git-ai) commit attribution â€
 which lines of each commit were written by an agent, and by which tool and model â€”
 into the same VictoriaMetrics instance backing the AI CLI dashboards.
 
+The matching dashboard ships provisioned from
+[`grafana/dashboards/git-ai-attribution.json`](../grafana/dashboards/git-ai-attribution.json)
+and is published on Grafana.com as
+[Git AI - Code Attribution](https://grafana.com/grafana/dashboards/25803) (ID `25803`).
+
 Attribution answers a question token telemetry cannot: not *how much did the
 agents cost*, but *how much of the code that shipped did they actually write*.
 

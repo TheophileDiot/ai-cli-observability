@@ -38,6 +38,12 @@ class PricingTests(unittest.TestCase):
             "GPT6_ASTRA_IN": "10",
             "GPT6_ASTRA_CACHED": "1",
             "GPT6_ASTRA_OUT": "50",
+            "GPT6_SOL_IN": "2",
+            "GPT6_SOL_CACHED": "0.2",
+            "GPT6_SOL_OUT": "10",
+            "GPT6_LUNA_IN": "0.1",
+            "GPT6_LUNA_CACHED": "0.01",
+            "GPT6_LUNA_OUT": "0.5",
         }
         for name, value in expected.items():
             self.assertEqual((pricing_dir / name).read_text(), value)
@@ -69,6 +75,7 @@ class PricingTests(unittest.TestCase):
         for model, prices in {
             "claude-fable-5-1": {"input": 10.0, "cached": 0.25, "output": 50.0},
             "claude-opus-5": {"input": 5.0, "cached": 0.5, "output": 25.0},
+            "claude-opus-5-5": {"input": 4.0, "cached": 0.2, "output": 20.0},
             "claude-sonnet-5": {"input": 2.0, "cached": 0.2, "output": 10.0},
         }.items():
             with self.subTest(model=model):
