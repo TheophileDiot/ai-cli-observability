@@ -1,0 +1,29 @@
+README.md
+  s_52c4aee4e3b154::t_b533c90eb21bef 46,56-57,171-178,186,213,217,220
+collector/config.yaml
+  s_52c4aee4e3b154::t_4a93a74b73f029 29,50-55,79,81
+git-ai-exporter/README.md
+  s_52c4aee4e3b154::t_b002ca744fa4a7 7-11
+pricing-exporter/exporter.py
+  s_52c4aee4e3b154::t_d65e03fbe553cb 31,42-53,78-83,246-251
+pricing-exporter/tests/test_pricing.py
+  s_52c4aee4e3b154::t_3cc5b62c8d8c46 41-46,78
+scripts/smoke_pricing.py
+  s_52c4aee4e3b154::t_fb6f39597961f7 26-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7b33beb526f4b026f6477eabe99a9068d1d955fb",
+  "prompts": {},
+  "sessions": {
+    "s_52c4aee4e3b154": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0cd18-c1dc-7cb1-ba9f-dee49e124560",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
