@@ -1,0 +1,25 @@
+CLAUDE.md
+  s_1be9a2acc4d574::t_081698335297be 55
+README.md
+  s_1be9a2acc4d574::t_593273ecf44dd2 220-222
+pricing-exporter/exporter.py
+  s_1be9a2acc4d574::t_7af9577949d651 90-95
+pricing-exporter/tests/test_pricing.py
+  s_1be9a2acc4d574::t_9ba1a62bec7a68 79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2d319db1eef4fba59624a0405c429f98d9a406a7",
+  "prompts": {},
+  "sessions": {
+    "s_1be9a2acc4d574": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0ed21-d544-7142-8411-5da370d844f1",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
