@@ -217,9 +217,9 @@ to VictoriaMetrics.
 Codex pricing covers GPT-6 Astra, Sol, and Luna and GPT-5.6 Sol, Terra, and Luna, including
 cache writes, Fast/Priority, Flex, and long-context charges. Earlier supported
 models retain their existing rules. Unknown internal aliases remain unsupported.
-Claude Fable 5.1, Opus 5.5, Opus 5, and Sonnet 5 are included in the price catalog; Claude
-request costs retain their native values without an extra promotion multiplier.
-Sonnet 5's $2/$10 per million input/output token price is now permanent.
+Claude Fable 5.1, Opus 5.5, Opus 5, Sonnet 5.5, and Sonnet 5 are included in the price
+catalog; Claude request costs retain their native values without an extra promotion
+multiplier. Sonnet 5.5 and Sonnet 5 both cost $2/$10 per million input/output tokens.
 
 Prices are loaded at exporter startup and interpolated when the collector starts.
 After a pricing update, rebuild the pricing exporter first, wait for it to become

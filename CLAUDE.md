@@ -52,7 +52,7 @@ This is the core of the repo and it spans three files.
    `usd_eur_exchange_rate` gauge that the exporter also serves on `:9101`.
 
 Claude Code emits native cost, so no collector-side estimation exists for it. Do not apply
-a second promotion multiplier in Grafana; Sonnet 5 retains its $2/$10 price. Match the
+a second promotion multiplier in Grafana; Sonnet 5.5 and Sonnet 5 share $2/$10 pricing. Match the
 `claude_code.api_request` event body because its `event.name` attribute is `api_request`.
 
 Every enriched record carries `cost_source` (`native` | `estimated` | `unsupported`) and a

@@ -87,6 +87,12 @@ OFFICIAL_PRICE_OVERRIDES: dict[str, dict[str, Any]] = {
         "cache_read_input_token_cost": 0.5e-6,
         "output_cost_per_token": 25e-6,
     },
+    "claude-sonnet-5-5": {
+        "litellm_provider": "anthropic",
+        "input_cost_per_token": 2e-6,
+        "cache_read_input_token_cost": 0.2e-6,
+        "output_cost_per_token": 10e-6,
+    },
     "claude-sonnet-5": {
         "litellm_provider": "anthropic",
         "input_cost_per_token": 2e-6,
