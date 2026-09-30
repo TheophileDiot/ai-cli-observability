@@ -1,0 +1,29 @@
+collector/config.yaml
+  s_2e98c643629468::t_6131dcd35fc4d1 29,53-55,82,84
+pricing-exporter/exporter.py
+  s_2e98c643629468::t_4ba668e5996329 31
+  s_2e98c643629468::t_3a13d2732ec910 48-53
+  s_2e98c643629468::t_6131dcd35fc4d1 261-263
+scripts/smoke_pricing.py
+  s_2e98c643629468::t_521f458d1638bb 27-28
+pricing-exporter/tests/test_pricing.py
+  s_2e98c643629468::t_6131dcd35fc4d1 44-46
+README.md
+  s_2e98c643629468::t_6131dcd35fc4d1 213,217
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "787fc2a7387a0c504a1c36e7e935d77d605833ed",
+  "prompts": {},
+  "sessions": {
+    "s_2e98c643629468": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50e98813-0d7e-44ae-a3e7-67149d890366",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
