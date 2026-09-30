@@ -210,11 +210,11 @@ raw API response. Grafana documents the current process in
 Claude Code emits native cost data. Codex and Gemini estimates are calculated
 from token events and model prices supplied by the pinned LiteLLM data set,
 with explicit official overrides for missing models and stale prices (verified
-2026-09-23). The pricing
+2026-09-30). The pricing
 exporter also records pricing history in SQLite and exposes the USD-to-EUR rate
 to VictoriaMetrics.
 
-Codex pricing covers GPT-6 Astra, Sol, and Luna and GPT-5.6 Sol, Terra, and Luna, including
+Codex pricing covers GPT-6 Astra, Sol, and Luna, GPT-6.1 Sol, and GPT-5.6 Sol, Terra, and Luna, including
 cache writes, Fast/Priority, Flex, and long-context charges. Earlier supported
 models retain their existing rules. Unknown internal aliases remain unsupported.
 Claude Fable 5.1, Opus 5.5, Opus 5, Sonnet 5.5, and Sonnet 5 are included in the price
