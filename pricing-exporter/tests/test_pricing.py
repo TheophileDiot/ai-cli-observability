@@ -79,7 +79,8 @@ class PricingTests(unittest.TestCase):
             "claude-fable-5-1": {"input": 10.0, "cached": 0.25, "output": 50.0},
             "claude-opus-5": {"input": 5.0, "cached": 0.5, "output": 25.0},
             "claude-opus-5-5": {"input": 4.0, "cached": 0.2, "output": 20.0},
-            "claude-sonnet-5-5": {"input": 2.0, "cached": 0.2, "output": 10.0},
+            "claude-sonnet-5-5": {"input": 2.0, "cached": 0.1, "output": 10.0},
+            "claude-haiku-5-5": {"input": 0.1, "cached": 0.01, "output": 0.5},
             "claude-sonnet-5": {"input": 2.0, "cached": 0.2, "output": 10.0},
         }.items():
             with self.subTest(model=model):

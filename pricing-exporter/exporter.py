@@ -28,7 +28,7 @@ def _load_model_cost() -> dict[str, Any]:
 
 model_cost = _load_model_cost()
 
-# Verified 2026-09-30. Override stale fields as well as missing models in the
+# Verified 2026-10-13. Override stale fields as well as missing models in the
 # pinned, offline LiteLLM map. These are standard USD prices per token.
 # https://developers.openai.com/api/docs/pricing
 # https://platform.claude.com/docs/en/about-claude/pricing
@@ -96,7 +96,7 @@ OFFICIAL_PRICE_OVERRIDES: dict[str, dict[str, Any]] = {
     "claude-sonnet-5-5": {
         "litellm_provider": "anthropic",
         "input_cost_per_token": 2e-6,
-        "cache_read_input_token_cost": 0.2e-6,
+        "cache_read_input_token_cost": 0.1e-6,
         "output_cost_per_token": 10e-6,
     },
     "claude-sonnet-5": {
@@ -104,6 +104,13 @@ OFFICIAL_PRICE_OVERRIDES: dict[str, dict[str, Any]] = {
         "input_cost_per_token": 2e-6,
         "cache_read_input_token_cost": 0.2e-6,
         "output_cost_per_token": 10e-6,
+    },
+    # ponytail: prompts up to 100K tokens only; above that Haiku 5.5 costs 5x.
+    "claude-haiku-5-5": {
+        "litellm_provider": "anthropic",
+        "input_cost_per_token": 0.1e-6,
+        "cache_read_input_token_cost": 0.01e-6,
+        "output_cost_per_token": 0.5e-6,
     },
 }
 official_price_models = set(OFFICIAL_PRICE_OVERRIDES)
