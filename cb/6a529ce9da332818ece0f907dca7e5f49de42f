@@ -1,0 +1,32 @@
+.pre-commit-config.yaml
+  s_116f37eeca3a87::t_bd5a4b8c5be05a 2
+AGENTS.md
+  s_116f37eeca3a87::t_bd5a4b8c5be05a 25-96
+  s_116f37eeca3a87::t_ec27010be98f92 1-24,97-108
+CLAUDE.md
+  s_7e1aa223afa859::t_f2c712925602d8 1,3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cb6a529ce9da332818ece0f907dca7e5f49de42f",
+  "prompts": {},
+  "sessions": {
+    "s_116f37eeca3a87": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a17d7c-9297-7fc3-807b-d7c905148f71",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    },
+    "s_7e1aa223afa859": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "63451d7e-2dbe-4de8-81f8-db7a01af69eb",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
