@@ -28,7 +28,7 @@ def _load_model_cost() -> dict[str, Any]:
 
 model_cost = _load_model_cost()
 
-# Verified 2026-10-13. Override stale fields as well as missing models in the
+# Verified 2026-10-27. Override stale fields as well as missing models in the
 # pinned, offline LiteLLM map. These are standard USD prices per token.
 # https://developers.openai.com/api/docs/pricing
 # https://platform.claude.com/docs/en/about-claude/pricing
@@ -50,6 +50,12 @@ OFFICIAL_PRICE_OVERRIDES: dict[str, dict[str, Any]] = {
         "input_cost_per_token": 2e-6,
         "cache_read_input_token_cost": 0.1e-6,
         "output_cost_per_token": 10e-6,
+    },
+    "gpt-6.1-terra": {
+        "litellm_provider": "openai",
+        "input_cost_per_token": 1e-6,
+        "cache_read_input_token_cost": 0.05e-6,
+        "output_cost_per_token": 5e-6,
     },
     "gpt-6-luna": {
         "litellm_provider": "openai",
@@ -268,6 +274,9 @@ OTEL_ENV_MAP: dict[str, tuple[str, str, str]] = {
     "GPT61_SOL_IN": ("gpt-6.1-sol", "openai", "input"),
     "GPT61_SOL_CACHED": ("gpt-6.1-sol", "openai", "cached"),
     "GPT61_SOL_OUT": ("gpt-6.1-sol", "openai", "output"),
+    "GPT61_TERRA_IN": ("gpt-6.1-terra", "openai", "input"),
+    "GPT61_TERRA_CACHED": ("gpt-6.1-terra", "openai", "cached"),
+    "GPT61_TERRA_OUT": ("gpt-6.1-terra", "openai", "output"),
     "GPT6_LUNA_IN": ("gpt-6-luna", "openai", "input"),
     "GPT6_LUNA_CACHED": ("gpt-6-luna", "openai", "cached"),
     "GPT6_LUNA_OUT": ("gpt-6-luna", "openai", "output"),

@@ -26,6 +26,8 @@ def check(collector_url, logs_url, dashboard_path, token, logs_auth=None):
         ("gpt6-sol", "gpt-6-sol", {}, 0.00269),
         ("gpt61-sol", "gpt-6.1-sol", {}, 0.00267),
         ("dated-gpt61-sol", "gpt-6.1-sol-2026-09-29", {}, 0.00267),
+        ("gpt61-terra", "gpt-6.1-terra", {}, 0.001335),
+        ("dated-gpt61-terra", "gpt-6.1-terra-2026-10-27", {}, 0.001335),
         ("gpt6-luna", "gpt-6-luna", {}, 0.0001345),
         ("sol", "gpt-5.6-sol", {}, 0.00538),
         ("terra", "gpt-5.6-terra", {}, 0.00289),
