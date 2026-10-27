@@ -1,5 +1,5 @@
 # This repository is PUBLIC. These hooks are the enforcement behind the
-# "never commit private data" rule in CLAUDE.md — prose alone does not hold.
+# "never commit private data" rule in AGENTS.md — prose alone does not hold.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0

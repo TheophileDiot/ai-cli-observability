@@ -1,4 +1,111 @@
-# Repository Guidelines
+# AGENTS.md
+
+This file provides guidance to AI coding agents working in this repository.
+
+This guide covers architecture, non-obvious constraints, style, testing, and commit conventions.
+
+## Commands
+
+```bash
+docker compose config -q                                              # validate compose
+docker compose up -d --build                                          # build + start stack
+docker compose down                                                   # stop, keep volumes
+jq empty grafana/dashboards/*.json extras/credit-resets/*.json        # validate dashboard JSON
+
+uv --directory pricing-exporter sync --frozen                         # install locked deps
+uv --directory pricing-exporter run python -m unittest discover -s tests
+uv --directory pricing-exporter run python -m unittest tests.test_pricing.PricingTests.test_current_codex_prices_are_exported  # single test
+
+set -a; . ./.env; set +a; python3 scripts/smoke.py                    # runtime end-to-end check
+```
+
+`docker compose down -v` permanently deletes all local telemetry and Grafana state. Never run it
+unless the user explicitly asks for that deletion.
+
+`python3 scripts/smoke.py` verifies authentication, telemetry ingestion, dashboard provisioning, and
+datasources after loading `.env`.
+
+## Architecture
+
+Three AI CLIs (Codex, Claude Code, Gemini CLI) push OTLP/HTTP to one collector, which fans the
+signals out to the VictoriaMetrics stack behind Grafana:
+
+- `/v1/logs` → VictoriaLogs (`otlp_http/vlogs`, uses `logs_endpoint` — the generic `endpoint`
+  key would re-append `/v1/logs`)
+- `/v1/metrics` → VictoriaMetrics via `prometheusremotewrite`
+- `/v1/traces` → VictoriaTraces (`traces_endpoint`, same path-append reason)
+
+Only port 4318 (collector) and 3000 (Grafana) are published, both bound to `127.0.0.1`. Storage
+services are Compose-network-internal. Ingestion auth is a bearer token (`OTEL_AUTH_TOKEN`);
+Grafana has its own admin password.
+
+### Cost estimation flow
+
+This is the core of the repo and it spans three files.
+
+1. `pricing-exporter/exporter.py` reads LiteLLM's **local, pinned** cost map
+   (`LITELLM_LOCAL_MODEL_COST_MAP=true`, no network), upserts prices into SQLite
+   (`model_pricing` + append-only `pricing_history`), and writes one plain-text file per price
+   into the shared `pricing-files` volume — e.g. `/pricing/GPT55_IN` containing `1.25`.
+2. `collector/config.yaml` reads those files with the collector's `${file:/pricing/NAME}`
+   syntax inside OTTL `transform` statements, computing `cost_usd_estimated` from token counts
+   on Codex `codex.sse_event` and Gemini `gemini_cli.api_response` log records.
+3. Grafana panels aggregate `effective_cost_usd` from VictoriaLogs and multiply by the
+   `usd_eur_exchange_rate` gauge that the exporter also serves on `:9101`.
+
+Claude Code emits native cost, so no collector-side estimation exists for it. Do not apply
+a second promotion multiplier in Grafana; Sonnet 5.5 and Sonnet 5 share $2/$10 pricing. Match the
+`claude_code.api_request` event body because its `event.name` attribute is `api_request`.
+
+Every enriched record carries `cost_source` (`native` | `estimated` | `unsupported`) and a
+hardcoded `pricing_as_of` date string, so old telemetry stays interpretable when prices move.
+Bump that date in `collector/config.yaml` when pricing rules change.
+
+### Constraints that will bite you
+
+- **Processor order in the logs pipeline is load-bearing.** `transform/vl_field_names` deletes
+  `event.name` / `event.kind` / `service.name` after renaming them to underscore forms for
+  VictoriaLogs. It must stay _after_ both enrichment processors, which match on the dotted names.
+- **OTTL rule order is load-bearing.** Legacy Codex tier rules go long-context → Fast/Priority → standard;
+  GPT-5.6/GPT-6 select model rates then apply cache-write, long-context, and tier multipliers;
+  Gemini goes specific model → family fallback, with every later rule guarded by
+  `cost_usd_estimated == nil` so specifics always win.
+- **Delta metrics are silently dropped** by `prometheusremotewrite`. Client configs must force
+  cumulative temporality (see the Claude Code example) or no metric lands at all.
+- **Dashboard field names use underscores** (`service_name`, `event_name`, `event_kind`), not
+  the OTel dotted names.
+
+### Adding a model price
+
+1. Add the env-var → `(litellm model key, provider, direction)` triple to `OTEL_ENV_MAP` in
+   `exporter.py`. If LiteLLM's pinned map lacks the model or has stale rates, add verified official prices
+   to `OFFICIAL_PRICE_OVERRIDES` (overwrites pricing fields; marks source `<provider>-official`).
+2. Add OTTL rules in `collector/config.yaml` referencing `${file:/pricing/NEW_VAR}`, placed so
+   ordering above holds.
+3. Extend `pricing-exporter/tests/test_pricing.py` —
+   `test_every_otel_price_has_a_model_cost` already asserts every `OTEL_ENV_MAP` entry resolves.
+4. Rebuild: price files are only written at exporter startup. Rebuild the exporter, wait for
+   health, then force-recreate the collector; it reads the files only at startup.
+
+## Security
+
+Prompt/tool-content logging is disabled in every client example; keep it that way unless the
+user explicitly opts in. Never commit `.env`, tokens, real telemetry, private hostnames, or
+Grafana exports carrying private labels. Start from `.env.example`. Compose port bindings must stay
+loopback unless the user is deliberately fronting the collector with a TLS proxy and network access
+controls.
+
+That rule is enforced, not merely stated — run `pre-commit install` once per clone:
+
+- **gitleaks** catches generic secrets (API keys, private keys).
+- **`scripts/check_no_sensitive.py`** catches what gitleaks cannot know: CGNAT and RFC1918
+  addresses, bearer tokens and contact emails, plus your own deployment identifiers loaded
+  from `.sensitive-patterns`.
+
+`.sensitive-patterns` is gitignored on purpose. A denylist of private hostnames and repo
+names is itself sensitive; committing it would publish the exact strings it suppresses.
+Copy `.sensitive-patterns.example` and fill it in locally. A line that must legitimately
+show a private-looking value is exempted by marking it `allow-sensitive`.
 
 ## Project Structure & Module Organization
 
@@ -10,20 +117,6 @@ enrichment live in `collector/config.yaml`. Grafana provisioning files are under
 Dockerfile, and unit tests. `scripts/smoke.py` performs end-to-end validation.
 Client examples belong in `clients/<cli>/`; optional integrations belong in
 `extras/`.
-
-## Build, Test, and Development Commands
-
-- `docker compose config -q`: validate the rendered Compose configuration.
-- `docker compose up -d --build`: build the exporter and start the stack.
-- `uv --directory pricing-exporter sync --frozen`: install the exact locked
-  Python dependencies.
-- `uv --directory pricing-exporter run python -m unittest discover -s tests`:
-  run pricing tests.
-- `jq empty grafana/dashboards/*.json extras/credit-resets/*.json`: validate
-  dashboard JSON.
-- `python3 scripts/smoke.py`: verify authentication, telemetry ingestion,
-  dashboard provisioning, and datasources after loading `.env`.
-- `docker compose down`: stop services without deleting volumes.
 
 ## Coding Style & Naming Conventions
 
@@ -46,11 +139,3 @@ Use Conventional Commits with short imperative subjects, such as
 `fix: update Gemini pricing fallback`. Keep each commit focused. Pull requests
 should explain behavior and configuration changes, list checks run, link
 relevant issues, and include sanitized screenshots for dashboard changes.
-
-## Security & Configuration
-
-Never commit `.env`, tokens, telemetry, private endpoints, or Grafana exports
-containing sensitive labels. Start from `.env.example`. Keep OTLP and Grafana
-loopback-bound unless a TLS proxy and network access controls are configured.
-Never use `docker compose down -v` unless permanent local data deletion is
-explicitly intended.
