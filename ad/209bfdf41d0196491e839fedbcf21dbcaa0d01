@@ -1,0 +1,27 @@
+pricing-exporter/tests/test_pricing.py
+  s_b07c9bab6a2822::t_e573066c4a2f58 47-49
+README.md
+  s_b07c9bab6a2822::t_ff25d408db3132 213,217
+collector/config.yaml
+  s_b07c9bab6a2822::t_ff25d408db3132 29,56-58,85,87
+pricing-exporter/exporter.py
+  s_b07c9bab6a2822::t_ff25d408db3132 31,54-59,277-279
+scripts/smoke_pricing.py
+  s_b07c9bab6a2822::t_ff25d408db3132 29-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ad209bfdf41d0196491e839fedbcf21dbcaa0d01",
+  "prompts": {},
+  "sessions": {
+    "s_b07c9bab6a2822": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a17cd1-ef75-7f92-b270-f327c55d12eb",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
