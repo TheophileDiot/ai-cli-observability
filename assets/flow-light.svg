@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" role="img" aria-label="Flow: Codex, Claude Code and Gemini CLI send OTLP over HTTP with a bearer token to the OpenTelemetry Collector, which writes logs to VictoriaLogs, traces to VictoriaTraces and metrics to VictoriaMetrics. Grafana reads all three. The pricing exporter feeds price files to the collector and the EUR rate to VictoriaMetrics.">
+<title>Flow: Codex, Claude Code and Gemini CLI send OTLP over HTTP with a bearer token to the OpenTelemetry Collector, which writes logs to VictoriaLogs, traces to VictoriaTraces and metrics to VictoriaMetrics. Grafana reads all three. The pricing exporter feeds price files to the collector and the EUR rate to VictoriaMetrics.</title>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#59636e"/></marker></defs>
+<rect x="1" y="1" width="798" height="498" rx="20" fill="#f6f8fa" stroke="#6e7781" stroke-width="1.5"/>
+<text x="96" y="44" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#59636e" text-anchor="middle" letter-spacing="1">AI CLIS</text>
+<text x="311" y="44" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#59636e" text-anchor="middle" letter-spacing="1">COLLECTOR</text>
+<text x="532" y="44" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#59636e" text-anchor="middle" letter-spacing="1">STORAGE</text>
+<text x="727" y="44" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#59636e" text-anchor="middle" letter-spacing="1">DASHBOARDS</text>
+<rect x="16" y="70" width="160" height="84" rx="14" fill="#ffffff" stroke="#3a4fb0" stroke-width="2.5"/>
+<text x="96.0" y="108.0" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="21" font-weight="700" fill="#1f2328" text-anchor="middle">Codex</text>
+<text x="96.0" y="134.0" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="400" fill="#59636e" text-anchor="middle">OTLP/HTTP</text>
+<path d="M176 112 H224" stroke="#59636e" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+<rect x="16" y="190" width="160" height="84" rx="14" fill="#ffffff" stroke="#0b6e6e" stroke-width="2.5"/>
+<text x="96.0" y="228.0" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="21" font-weight="700" fill="#1f2328" text-anchor="middle">Claude Code</text>
+<text x="96.0" y="254.0" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="400" fill="#59636e" text-anchor="middle">OTLP/HTTP</text>
+<path d="M176 232 H224" stroke="#59636e" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+<rect x="16" y="310" width="160" height="84" rx="14" fill="#ffffff" stroke="#a84300" stroke-width="2.5"/>
+<text x="96.0" y="348.0" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="21" font-weight="700" fill="#1f2328" text-anchor="middle">Gemini CLI</text>
+<text x="96.0" y="374.0" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="400" fill="#59636e" text-anchor="middle">OTLP/HTTP</text>
+<path d="M176 352 H224" stroke="#59636e" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+<rect x="228" y="100" width="166" height="264" rx="14" fill="#e6eafa" stroke="#3a4fb0" stroke-width="2.5"/>
+<text x="311.0" y="196" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="21" font-weight="700" fill="#1f2328" text-anchor="middle">OpenTelemetry</text>
+<text x="311" y="222" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="21" font-weight="700" fill="#1f2328" text-anchor="middle">Collector</text>
+<text x="311" y="258" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="18" font-weight="400" fill="#1f2328" text-anchor="middle">:4318</text>
+<text x="311" y="288" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="16" font-weight="400" fill="#59636e" text-anchor="middle">bearer auth</text>
+<path d="M394 112 H436" stroke="#59636e" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+<rect x="440" y="70" width="184" height="84" rx="14" fill="#dcf2ef" stroke="#0b6e6e" stroke-width="2.5"/>
+<text x="532.0" y="108.0" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="21" font-weight="700" fill="#1f2328" text-anchor="middle">VictoriaLogs</text>
+<text x="532.0" y="134.0" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="400" fill="#59636e" text-anchor="middle">logs</text>
+<path d="M394 232 H436" stroke="#59636e" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+<rect x="440" y="190" width="184" height="84" rx="14" fill="#dcf2ef" stroke="#0b6e6e" stroke-width="2.5"/>
+<text x="532.0" y="228.0" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="21" font-weight="700" fill="#1f2328" text-anchor="middle">VictoriaTraces</text>
+<text x="532.0" y="254.0" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="400" fill="#59636e" text-anchor="middle">traces</text>
+<path d="M394 352 H436" stroke="#59636e" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+<rect x="440" y="310" width="184" height="84" rx="14" fill="#dcf2ef" stroke="#0b6e6e" stroke-width="2.5"/>
+<text x="532.0" y="348.0" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="21" font-weight="700" fill="#1f2328" text-anchor="middle">VictoriaMetrics</text>
+<text x="532.0" y="374.0" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="400" fill="#59636e" text-anchor="middle">metrics</text>
+<rect x="670" y="172" width="114" height="120" rx="14" fill="#fde8d6" stroke="#a84300" stroke-width="2.5"/>
+<text x="727.0" y="222" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="21" font-weight="700" fill="#1f2328" text-anchor="middle">Grafana</text>
+<text x="727.0" y="248" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="400" fill="#59636e" text-anchor="middle">:3000</text>
+<path d="M624 112 H647 V 202 H666" stroke="#59636e" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+<path d="M624 232 H666" stroke="#59636e" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+<path d="M624 352 H647 V 262 H666" stroke="#59636e" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+<rect x="216" y="424" width="190" height="56" rx="14" fill="#fde8d6" stroke="#a84300" stroke-width="2.5"/>
+<text x="311.0" y="459" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="21" font-weight="700" fill="#1f2328" text-anchor="middle">Pricing exporter</text>
+<path d="M311 424 V 368" stroke="#59636e" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+<text x="322" y="402" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="400" fill="#59636e" text-anchor="start">price files</text>
+<path d="M406 452 H532 V 398" stroke="#59636e" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+<text x="546" y="432" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="400" fill="#59636e" text-anchor="start">EUR rate +</text>
+<text x="546" y="454" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="400" fill="#59636e" text-anchor="start">pricing metrics</text>
+</svg>

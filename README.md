@@ -12,7 +12,47 @@ Code**, and **Gemini CLI** into one self-hosted Grafana view. Track usage,
 latency, errors, tokens, tool activity, traces, and estimated API-equivalent
 cost without sending your telemetry to another SaaS.
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/flow-dark.svg">
+    <img alt="Codex, Claude Code and Gemini CLI send OTLP over HTTP to the OpenTelemetry Collector. The collector writes logs to VictoriaLogs, traces to VictoriaTraces and metrics to VictoriaMetrics, and Grafana reads all three. The pricing exporter feeds price files to the collector and the EUR rate to VictoriaMetrics." src="assets/flow-light.svg" width="800">
+  </picture>
+</p>
+
 > One Compose stack. Three AI CLIs. Full OpenTelemetry signals. Your data.
+
+<details>
+<summary>Text version of the diagram (Mermaid)</summary>
+
+```mermaid
+flowchart LR
+    C[Codex] -->|OTLP/HTTP + bearer| O[OpenTelemetry Collector]
+    A[Claude Code] -->|OTLP/HTTP + bearer| O
+    G[Gemini CLI] -->|OTLP/HTTP + bearer| O
+    P[Pricing exporter] -->|price files| O
+    P -->|EUR rate + pricing metrics| M[VictoriaMetrics]
+    O -->|logs| L[VictoriaLogs]
+    O -->|metrics| M
+    O -->|traces| T[VictoriaTraces]
+    L --> D[Grafana]
+    M --> D
+    T --> D
+```
+
+</details>
+
+The collector accepts OTLP/HTTP only:
+
+| Path          | Destination                                      |
+| ------------- | ------------------------------------------------ |
+| `/v1/logs`    | VictoriaLogs                                     |
+| `/v1/metrics` | VictoriaMetrics through Prometheus remote write  |
+| `/v1/traces`  | VictoriaTraces                                   |
+
+Grafana and OTLP bind to `127.0.0.1` by default. Storage services are reachable
+only inside the Compose network.
+
+## What you can answer
 
 | Answer                                               | Signal                            |
 | ---------------------------------------------------- | --------------------------------- |
@@ -21,7 +61,31 @@ cost without sending your telemetry to another SaaS.
 | Where do slow requests and failures happen?          | Latency, errors, logs, and traces |
 | Which tools are agents actually using?               | Immutable tool events             |
 
-## Quick start
+### What ships
+
+- A ready-to-use [`AI CLI Tools - Overview`](https://grafana.com/grafana/dashboards/25645) Grafana dashboard
+- A [`Git AI - Code Attribution`](https://grafana.com/grafana/dashboards/25803) dashboard, fed by the optional [git-ai exporter](git-ai-exporter/)
+- Logs, metrics, and traces stored in the VictoriaMetrics stack
+- Client examples for Codex, Claude Code, and Gemini CLI
+- Collector-side Codex and Gemini cost estimation
+- Native Claude Code cost metrics
+- Live USD-to-EUR conversion for dashboard totals
+- Pinned container images and the VictoriaLogs Grafana plugin
+- An optional credit-reset dashboard for custom exporters
+
+## Safe by default
+
+| Local only | Prompts off | Estimates, not invoices |
+| --- | --- | --- |
+| Grafana and OTLP bind to `127.0.0.1` by default. | Prompt logging is disabled in all examples. | Cost figures are estimates. Provider pricing changes. |
+| [Remote agents](#remote-agents) need a TLS proxy. | Details in [Privacy and security](#privacy-and-security). | Details in [Cost estimation](#cost-estimation). |
+
+> [!NOTE]
+> This repository is a sanitized, single-host version of a real setup. It
+> contains no production telemetry, credentials, hostnames, private network
+> addresses, or identity-provider configuration.
+
+## Step 1: start the stack
 
 **You need:** Docker with Compose v2. Python 3.11 or newer is required only for
 the smoke test.
@@ -46,50 +110,7 @@ Open <http://localhost:3000>, sign in with `admin` and your Grafana password,
 then connect a client below. Grafana provisions both dashboards and all three
 datasources automatically.
 
-> [!NOTE]
-> This repository is a sanitized, single-host version of a real setup. It
-> contains no production telemetry, credentials, hostnames, private network
-> addresses, or identity-provider configuration.
-
-## What ships
-
-- A ready-to-use [`AI CLI Tools - Overview`](https://grafana.com/grafana/dashboards/25645) Grafana dashboard
-- A [`Git AI - Code Attribution`](https://grafana.com/grafana/dashboards/25803) dashboard, fed by the optional [git-ai exporter](git-ai-exporter/)
-- Logs, metrics, and traces stored in the VictoriaMetrics stack
-- Client examples for Codex, Claude Code, and Gemini CLI
-- Collector-side Codex and Gemini cost estimation
-- Native Claude Code cost metrics
-- Live USD-to-EUR conversion for dashboard totals
-- Pinned container images and the VictoriaLogs Grafana plugin
-- An optional credit-reset dashboard for custom exporters
-
-## Architecture
-
-```mermaid
-flowchart LR
-    C[Codex] -->|OTLP/HTTP + bearer| O[OpenTelemetry Collector]
-    A[Claude Code] -->|OTLP/HTTP + bearer| O
-    G[Gemini CLI] -->|OTLP/HTTP + bearer| O
-    P[Pricing exporter] -->|price files| O
-    P -->|EUR rate + pricing metrics| M[VictoriaMetrics]
-    O -->|logs| L[VictoriaLogs]
-    O -->|metrics| M
-    O -->|traces| T[VictoriaTraces]
-    L --> D[Grafana]
-    M --> D
-    T --> D
-```
-
-The collector accepts OTLP/HTTP only:
-
-- `/v1/logs` -> VictoriaLogs
-- `/v1/metrics` -> VictoriaMetrics through Prometheus remote write
-- `/v1/traces` -> VictoriaTraces
-
-Grafana and OTLP bind to `127.0.0.1` by default. Storage services are reachable
-only inside the Compose network.
-
-## Prerequisites
+### Prerequisites
 
 - Docker with Compose v2
 - Python 3.11 or newer for the smoke test
@@ -97,7 +118,7 @@ only inside the Compose network.
 - Internet access to pull images and the Grafana VictoriaLogs plugin, and to
   refresh the exchange rate
 
-## Configure clients
+## Step 2: connect a client
 
 The examples use `http://localhost:4318`. Export the collector token in the
 same process environment as the CLI:
@@ -138,35 +159,7 @@ before starting Gemini CLI. The file also contains an equivalent
 Gemini traces can contain more context than logs and metrics. Disable
 `GEMINI_TELEMETRY_TRACES_ENABLED` if that is not acceptable for your data.
 
-## Privacy and security
-
-Prompt logging is disabled in all examples. That does not make arbitrary
-telemetry harmless: model names, session identifiers, tool activity, errors,
-and trace attributes can still disclose operational context.
-
-- Use a unique, random bearer token.
-- Keep `.env` and client configuration files containing secrets out of Git.
-- Restrict Grafana and storage backends to trusted networks.
-- Review emitted fields before increasing retention or adding users.
-- Do not enable prompt, tool-detail, or raw-body logging without an explicit
-  retention and access policy.
-- Treat Grafana screenshots as data exports; inspect them before publication.
-
-The collector's bearer token protects ingestion, not Grafana. Grafana uses its
-own administrator password.
-
-## Remote agents
-
-The default Compose file is deliberately local-only. For remote agents, put a
-TLS-terminating reverse proxy in front of collector port `4318`, expose only
-that port, and keep VictoriaMetrics, VictoriaLogs, and VictoriaTraces private.
-A private overlay network or firewall allowlist should limit who can reach the
-proxy.
-
-Change client endpoints to `https://otel.example.com` while retaining the
-signal paths. Do not expose unauthenticated OTLP over plain HTTP.
-
-## Dashboard
+## Step 3: read the dashboards
 
 Both dashboards are published on Grafana.com and can be imported by ID into any
 Grafana instance:
@@ -191,6 +184,9 @@ exporter-provided reset timestamps are preferred.
 
 ### Publish on Grafana.com
 
+<details>
+<summary>Steps to publish a dashboard</summary>
+
 1. Load the provisioned dashboard and confirm its panels against real,
    sanitized data.
 2. In the dashboard toolbar, select **Export** and then **Export as code**.
@@ -205,6 +201,8 @@ Do not upload `.env`, Grafana's database, screenshots with private labels, or a
 raw API response. Grafana documents the current process in
 [Share dashboards and panels](https://grafana.com/docs/grafana-cloud/visualizations/dashboards/share-dashboards-panels/#publish-a-community-dashboard).
 
+</details>
+
 ## Cost estimation
 
 Claude Code emits native cost data. Codex and Gemini estimates are calculated
@@ -213,6 +211,9 @@ with explicit official overrides for missing models and stale prices (verified
 2026-10-27). The pricing
 exporter also records pricing history in SQLite and exposes the USD-to-EUR rate
 to VictoriaMetrics.
+
+<details>
+<summary>Model coverage and pricing updates</summary>
 
 Codex pricing covers GPT-6 Astra, Sol, and Luna, GPT-6.1 Sol and Terra, and GPT-5.6 Sol, Terra, and Luna, including
 cache writes, Fast/Priority, Flex, and long-context charges. Earlier supported
@@ -227,9 +228,45 @@ healthy, then force-recreate the collector to load the new files. A normal Compo
 update does not recreate a container just because a bind-mounted file changed.
 Historical request records retain the prices captured at ingestion.
 
-These values are estimates, not invoices. Provider pricing, service tiers,
-long-context multipliers, promotions, and model aliases change. The collector
-stores a `pricing_as_of` attribute so old telemetry remains interpretable.
+</details>
+
+> [!IMPORTANT]
+> These values are estimates, not invoices. Provider pricing, service tiers,
+> long-context multipliers, promotions, and model aliases change. The collector
+> stores a `pricing_as_of` attribute so old telemetry remains interpretable.
+
+## Privacy and security
+
+Prompt logging is disabled in all examples. That does not make arbitrary
+telemetry harmless: model names, session identifiers, tool activity, errors,
+and trace attributes can still disclose operational context.
+
+- Use a unique, random bearer token.
+- Keep `.env` and client configuration files containing secrets out of Git.
+- Restrict Grafana and storage backends to trusted networks.
+- Review emitted fields before increasing retention or adding users.
+- Do not enable prompt, tool-detail, or raw-body logging without an explicit
+  retention and access policy.
+- Treat Grafana screenshots as data exports; inspect them before publication.
+
+The collector's bearer token protects ingestion, not Grafana. Grafana uses its
+own administrator password.
+
+### Remote agents
+
+<details>
+<summary>Remote agent setup</summary>
+
+The default Compose file is deliberately local-only. For remote agents, put a
+TLS-terminating reverse proxy in front of collector port `4318`, expose only
+that port, and keep VictoriaMetrics, VictoriaLogs, and VictoriaTraces private.
+A private overlay network or firewall allowlist should limit who can reach the
+proxy.
+
+Change client endpoints to `https://otel.example.com` while retaining the
+signal paths. Do not expose unauthenticated OTLP over plain HTTP.
+
+</details>
 
 ## Verification
 
@@ -241,6 +278,9 @@ jq empty grafana/dashboards/*.json extras/credit-resets/*.json
 uv --directory pricing-exporter sync --frozen
 uv --directory pricing-exporter run python -m unittest discover -s tests
 ```
+
+<details>
+<summary>Runtime smoke test</summary>
 
 Runtime smoke test after `docker compose up -d --build`:
 
@@ -259,14 +299,17 @@ queries through Grafana's authenticated proxy. It writes only synthetic records
 named `ai-cli-observability-smoke`. Run it against a test stack: its synthetic
 requests deliberately include nonzero costs.
 
+</details>
+
 Stop containers without deleting data:
 
 ```bash
 docker compose down
 ```
 
-`docker compose down -v` permanently deletes this stack's local telemetry and
-Grafana state.
+> [!CAUTION]
+> `docker compose down -v` permanently deletes this stack's local telemetry and
+> Grafana state.
 
 ## Related projects
 
