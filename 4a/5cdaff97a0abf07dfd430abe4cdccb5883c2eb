@@ -1,0 +1,23 @@
+assets/flow-dark.svg
+  s_33433e74bfd396::t_2c24da19d59d59 1-51
+assets/flow-light.svg
+  s_33433e74bfd396::t_2c24da19d59d59 1-51
+README.md
+  s_33433e74bfd396::t_2c24da19d59d59 15-21,24-56,64-88,113,121,162,187-189,204-205,215-217,231-269,282-284,302-303,310-312
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4a5cdaff97a0abf07dfd430abe4cdccb5883c2eb",
+  "prompts": {},
+  "sessions": {
+    "s_33433e74bfd396": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d4a597e7-506b-4379-bd58-42c40018bc9c",
+        "model": "unknown"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
