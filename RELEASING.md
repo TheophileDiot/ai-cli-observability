@@ -29,8 +29,9 @@ SQLite pricing history and past ingested records remain historical.
    `CHANGELOG.md`. Include changed model prices, compatibility, migration and
    rollback limits. Keep dependency hashes and third-party image digests pinned.
 2. Run the checks in README.md and merge only after all CI jobs pass. CI runs the
-   public-data hooks and unit tests, validates both Compose modes, and builds and
-   smoke-tests the stack on native Linux amd64 and arm64 runners. Pricing tests
+   public-data hooks, a committed-history secret scan and unit tests, validates
+   both Compose modes, and builds and smoke-tests the stack on native Linux amd64
+   and arm64 runners. Pricing tests
    check every collector price-file reference against the exporter; smoke tests
    exercise real collector enrichment and dashboard queries.
 3. After explicit authorization to publish, create an annotated tag on the

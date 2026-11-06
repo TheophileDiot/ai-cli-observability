@@ -16,6 +16,11 @@ repos:
     rev: v8.30.0
     hooks:
       - id: gitleaks
+      - id: gitleaks
+        alias: gitleaks-ci
+        name: scan committed history for secrets
+        entry: gitleaks git --redact --log-opts=--all
+        stages: [manual]
 
   - repo: local
     hooks:
