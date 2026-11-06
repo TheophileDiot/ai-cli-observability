@@ -1,0 +1,21 @@
+.github/workflows/release.yaml
+  s_2d4e032178fc5d::t_70216e9f9fb391 54-63
+scripts/tests/test_release.py
+  s_2d4e032178fc5d::t_daee1556931d41 3-5,7,65-98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9277f7e940935d07ff63ac85c6ba209efdc5a0f7",
+  "prompts": {},
+  "sessions": {
+    "s_2d4e032178fc5d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1b19b-b76a-7c51-8546-7e3b2bb7b167",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
