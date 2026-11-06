@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,6 +19,12 @@ import exporter  # noqa: E402
 
 
 class PricingTests(unittest.TestCase):
+    def test_collector_prices_exist_in_this_exporter(self) -> None:
+        config = (Path(__file__).resolve().parents[2] / "collector/config.yaml").read_text()
+        required = set(re.findall(r"\$\{file:/pricing/(\w+)\}", config))
+        self.assertTrue(required)
+        self.assertFalse(required - exporter.OTEL_ENV_MAP.keys())
+
     def test_current_codex_prices_are_exported(self) -> None:
         exporter.sync_litellm_to_db()
         exporter.write_pricing_files()

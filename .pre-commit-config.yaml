@@ -7,6 +7,8 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+        # Compose validates its custom !reset tag in CI.
+        exclude: ^compose\.release\.yaml$
       - id: check-added-large-files
         args: ["--maxkb=512"]
 
@@ -14,6 +16,11 @@ repos:
     rev: v8.30.0
     hooks:
       - id: gitleaks
+      - id: gitleaks
+        alias: gitleaks-ci
+        name: scan committed history for secrets
+        entry: gitleaks git --redact --log-opts=--all
+        stages: [manual]
 
   - repo: local
     hooks:
