@@ -1,6 +1,10 @@
 """Release boundaries: reject mismatched versions and incomplete release notes."""
 
+import os
+import re
+import subprocess
 import sys
+import textwrap
 import tempfile
 import unittest
 from pathlib import Path
@@ -56,6 +60,40 @@ class ReleaseTests(unittest.TestCase):
             (self.root / "CHANGELOG.md").write_text(text)
             with self.subTest(text=text), self.assertRaises(ValueError):
                 release.validate(self.root)
+
+
+class PublishGuardTests(unittest.TestCase):
+    def test_publish_rechecks_releases_before_registry_access(self):
+        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/release.yaml").read_text()
+        publish = workflow.split("\n  publish:\n", 1)[1]
+        preflight = publish.split("      - uses: docker/login-action@", 1)[0]
+        commands = re.findall(r"^        run: \|\n((?:          .*\n|\n)+)", preflight, re.MULTILINE)
+        script = '\n'.join(textwrap.dedent(command) for command in commands)
+        gh = 'gh() { printf "%s\\n" "$RELEASE_TAGS"; return "$GH_STATUS"; }\n'
+        with tempfile.TemporaryDirectory() as directory:
+            for tags, status, allowed in (
+                ("", "0", True),
+                ("v0.1.00\nv0.1.0-rc.1", "0", True),
+                ("v0.0.0\nv0.1.0", "0", False),
+                ("", "1", False),
+                ("v0.0.0", "1", False),
+            ):
+                with self.subTest(tags=tags, status=status):
+                    result = subprocess.run(
+                        ["bash", "-e", "-o", "pipefail", "-c", gh + script],
+                        env={
+                            "PATH": os.environ["PATH"],
+                            "GITHUB_REPOSITORY": "example/stack",
+                            "GITHUB_REF_NAME": "v0.1.0",
+                            "RUNNER_TEMP": directory,
+                            "RELEASE_TAGS": tags,
+                            "GH_STATUS": status,
+                        },
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
+                    )
+                    self.assertEqual(result.returncode == 0, allowed, result.stderr)
 
 
 if __name__ == "__main__":

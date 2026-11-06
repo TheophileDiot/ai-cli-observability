@@ -51,6 +51,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Recheck release before registry access
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A publish-only rerun skips the version job.
+          gh api --paginate "repos/$GITHUB_REPOSITORY/releases" --jq '.[].tag_name' > "$RUNNER_TEMP/release-tags"
+          if grep -Fxq "$GITHUB_REF_NAME" "$RUNNER_TEMP/release-tags"; then
+            echo 'This release already exists; do not republish its image.' >&2
+            exit 1
+          fi
       - name: Image coordinates
         id: image
         run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}-pricing-exporter" >> "$GITHUB_OUTPUT"
