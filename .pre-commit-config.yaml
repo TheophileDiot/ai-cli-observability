@@ -7,6 +7,8 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+        # Compose validates its custom !reset tag in CI.
+        exclude: ^compose\.release\.yaml$
       - id: check-added-large-files
         args: ["--maxkb=512"]
 

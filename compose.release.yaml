@@ -1,0 +1,8 @@
+# Requires Docker Compose 2.24.4+ for !reset.
+services:
+  pricing-init:
+    image: "${PRICING_IMAGE:?Set PRICING_IMAGE to the image reference from the release notes}"
+    build: !reset null
+  pricing-exporter:
+    image: "${PRICING_IMAGE:?Set PRICING_IMAGE to the image reference from the release notes}"
+    build: !reset null

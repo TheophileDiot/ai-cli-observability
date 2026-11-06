@@ -85,6 +85,14 @@ only inside the Compose network.
 > contains no production telemetry, credentials, hostnames, private network
 > addresses, or identity-provider configuration.
 
+## Releases and updates
+
+The stack uses one version for collector configuration, pricing and dashboards.
+The initial version is `0.1.0`. Follow [GitHub Releases](https://github.com/TheophileDiot/ai-cli-observability/releases)
+and use the matching tagged sources and pricing image digest.
+[RELEASING.md](RELEASING.md) covers release assets, the optional GHCR Compose
+override, upgrades and rollback. Local builds below remain the default.
+
 ## Step 1: start the stack
 
 **You need:** Docker with Compose v2. Python 3.11 or newer is required only for
@@ -273,10 +281,13 @@ signal paths. Do not expose unauthenticated OTLP over plain HTTP.
 Static checks:
 
 ```bash
+python3 scripts/release.py
+python3 -m unittest discover -s scripts/tests
+python3 -m unittest discover -s git-ai-exporter/tests
 docker compose config -q
 jq empty grafana/dashboards/*.json extras/credit-resets/*.json
-uv --directory pricing-exporter sync --frozen
-uv --directory pricing-exporter run python -m unittest discover -s tests
+uv --directory pricing-exporter sync --frozen --python 3.13
+uv --directory pricing-exporter run --frozen python -m unittest discover -s tests
 ```
 
 <details>

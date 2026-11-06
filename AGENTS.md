@@ -135,6 +135,12 @@ before the runtime smoke test. Smoke records must retain the
 
 ## Commit & Pull Request Guidelines
 
+`VERSION` is shared by the collector, pricing exporter and dashboards. Keep it
+aligned with the exporter project/lock versions and CHANGELOG.md. Run
+`python3 scripts/release.py` and the tests in `scripts/tests` when changing release
+automation. See RELEASING.md for CI, GHCR permissions and consumer updates. Never
+create or push a release tag without an explicit request to publish.
+
 Use Conventional Commits with short imperative subjects, such as
 `fix: update Gemini pricing fallback`. Keep each commit focused. Pull requests
 should explain behavior and configuration changes, list checks run, link
