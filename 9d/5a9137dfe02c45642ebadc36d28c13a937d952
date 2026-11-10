@@ -1,0 +1,24 @@
+pricing-exporter/exporter.py
+  s_c0f3fe641569a1::t_d9d9bf0ae06b25 90-95
+  s_c0f3fe641569a1::t_a832b2de25a022 31
+pricing-exporter/tests/test_pricing.py
+  s_c0f3fe641569a1::t_1ee51ec9ea7648 90
+README.md
+  s_c0f3fe641569a1::t_a62d74dc07a0b6 229
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9d5a9137dfe02c45642ebadc36d28c13a937d952",
+  "prompts": {},
+  "sessions": {
+    "s_c0f3fe641569a1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ec31e6fb-d5c5-4efc-ba8c-d64251c90405",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
