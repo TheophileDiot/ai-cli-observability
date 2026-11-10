@@ -28,7 +28,7 @@ def _load_model_cost() -> dict[str, Any]:
 
 model_cost = _load_model_cost()
 
-# Verified 2026-10-27. Override stale fields as well as missing models in the
+# Verified 2026-11-10. Override stale fields as well as missing models in the
 # pinned, offline LiteLLM map. These are standard USD prices per token.
 # https://developers.openai.com/api/docs/pricing
 # https://platform.claude.com/docs/en/about-claude/pricing
@@ -86,6 +86,12 @@ OFFICIAL_PRICE_OVERRIDES: dict[str, dict[str, Any]] = {
         "input_cost_per_token": 10e-6,
         "cache_read_input_token_cost": 0.25e-6,
         "output_cost_per_token": 50e-6,
+    },
+    "claude-fable-5-2": {
+        "litellm_provider": "anthropic",
+        "input_cost_per_token": 8e-6,
+        "cache_read_input_token_cost": 0.2e-6,
+        "output_cost_per_token": 40e-6,
     },
     "claude-opus-5-5": {
         "litellm_provider": "anthropic",
