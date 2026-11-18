@@ -1,0 +1,56 @@
+scripts/smoke_pricing.py
+  s_d61b5a3a1c29e0::t_1c36d8bd087573 25-28
+  s_3402dcd5e648f0::t_97460b58e9a06d 62-64
+  s_8e925240e5ccbc::t_032f4f25308c3e 68-73
+  s_3402dcd5e648f0::t_8fb9c775ec5444 192
+  s_8e925240e5ccbc::t_006eb3de1eaec3 65-67,74
+  s_3402dcd5e648f0::t_43b05665a39851 193-200
+  s_3402dcd5e648f0::t_dec0c956837734 61
+collector/config.yaml
+  s_d61b5a3a1c29e0::t_ec68e7b14042f7 29,34,36,39,41,43,47-52,98,100
+  s_3402dcd5e648f0::t_94abd2464ed615 85-86
+  s_3402dcd5e648f0::t_646b1501b235eb 87-91
+  s_3402dcd5e648f0::t_2c94d973579900 92
+  s_8e925240e5ccbc::t_85b6e35067e3f5 94-95
+README.md
+  s_d61b5a3a1c29e0::t_f919e903e1ee4f 218
+  s_3402dcd5e648f0::t_507d35d17d2002 228-230
+  s_3402dcd5e648f0::t_ae9b24719491b7 227,231-232
+  s_d61b5a3a1c29e0::t_ec68e7b14042f7 225-226
+pricing-exporter/exporter.py
+  s_d61b5a3a1c29e0::t_ec68e7b14042f7 31,36-47,286-291
+pricing-exporter/tests/test_pricing.py
+  s_d61b5a3a1c29e0::t_1c36d8bd087573 36-41,68-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e1c35ce207b0efb40e7bfe6a19c76a349d4c203e",
+  "prompts": {},
+  "sessions": {
+    "s_3402dcd5e648f0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "72aee7ef-fcac-4b71-a712-800867f2592c",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    },
+    "s_8e925240e5ccbc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "12591d3a-4962-4de1-aca5-b2f0247ddb65",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    },
+    "s_d61b5a3a1c29e0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ed9e-881f-7823-b7cd-4958065e620d",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "TheophileDiot <tdiot@bunkerity.com>"
+    }
+  }
+}
