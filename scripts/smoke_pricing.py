@@ -22,6 +22,10 @@ def check(collector_url, logs_url, dashboard_path, token, logs_auth=None):
         "output_token_count": 100,
     }
     cases = [
+        ("gpt62-astra", "gpt-6.2-astra", {}, 0.01068),
+        ("dated-gpt62-astra", "gpt-6.2-astra-2026-11-18", {}, 0.01068),
+        ("gpt62-sol", "gpt-6.2-sol", {}, 0.00267),
+        ("dated-gpt62-sol", "gpt-6.2-sol-2026-11-18", {}, 0.00267),
         ("astra", "gpt-6-astra", {}, 0.01345),
         ("gpt6-sol", "gpt-6-sol", {}, 0.00269),
         ("gpt61-sol", "gpt-6.1-sol", {}, 0.00267),
@@ -54,6 +58,20 @@ def check(collector_url, logs_url, dashboard_path, token, logs_auth=None):
         ("legacy-fast", "gpt-5.4", {"service_tier": "fast"}, 0.0071),
         ("native", "gpt-6-astra", {"cost_usd": 0.123}, 0.123),
         ("unknown", "codex-auto-review", {}, None),
+        ("gpt62-flex", "gpt-6.2-sol", {"service_tier": "flex"}, None),
+        ("gpt62-ultrafast", "gpt-6.2-sol", {"service_tier": "ultrafast"}, 0.00801),
+        ("gpt61-ultrafast", "gpt-6.1-sol", {"service_tier": "ultrafast"}, 0.01602),
+        ("terra-ultrafast", "gpt-6.1-terra", {"service_tier": "ultrafast"}, None),
+        ("legacy54-ultrafast", "gpt-5.4", {"service_tier": "ultrafast"}, None),
+        ("legacy54mini-ultrafast", "gpt-5.4-mini", {"service_tier": "ultrafast"}, None),
+        ("legacy55-ultrafast", "gpt-5.5", {"service_tier": "ultrafast"}, None),
+        (
+            "legacy53codex-ultrafast",
+            "gpt-5.3-codex",
+            {"service_tier": "ultrafast"},
+            None,
+        ),
+        ("legacy5mini-ultrafast", "gpt-5-mini", {"service_tier": "ultrafast"}, None),
         ("invalid", "gpt-6-astra", {"cached_token_count": 1100}, None),
     ]
     now = str(time.time_ns())
@@ -170,8 +188,16 @@ def check(collector_url, logs_url, dashboard_path, token, logs_auth=None):
             .replace("${service:regex}", service)
             .replace("${eur_rate}", "1")
         )
-        result = query(expr)
         field, expected = ("cost_eur", 0.05) if panel["id"] == 107 else ("requests", 2)
+        result = []
+        for _ in range(30):
+            # The Claude records can land in VictoriaLogs after the Codex ones.
+            result = query(expr)
+            if result and math.isclose(
+                float(result[0].get(field, "nan")), expected, rel_tol=1e-9
+            ):
+                break
+            time.sleep(1)
         if not result or not math.isclose(
             float(result[0].get(field, "nan")), expected, rel_tol=1e-9
         ):

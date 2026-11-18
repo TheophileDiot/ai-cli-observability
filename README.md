@@ -215,17 +215,21 @@ raw API response. Grafana documents the current process in
 
 Claude Code emits native cost data. Codex and Gemini estimates are calculated
 from token events and model prices supplied by the pinned LiteLLM data set,
-with explicit official overrides for missing models and stale prices (verified
-2026-10-27). The pricing
+with explicit official overrides for missing models and stale prices. The pricing
 exporter also records pricing history in SQLite and exposes the USD-to-EUR rate
 to VictoriaMetrics.
 
 <details>
 <summary>Model coverage and pricing updates</summary>
 
-Codex pricing covers GPT-6 Astra, Sol, and Luna, GPT-6.1 Sol and Terra, and GPT-5.6 Sol, Terra, and Luna, including
-cache writes, Fast/Priority, Flex, and long-context charges. Earlier supported
-models retain their existing rules. Unknown internal aliases remain unsupported.
+Codex pricing covers `gpt-6.2-astra`, `gpt-6.2-sol`, GPT-6.1 Sol and Terra,
+GPT-6 Astra, Sol, and Luna, and GPT-5.6 Sol, Terra, and Luna, including cache
+writes, Fast/Priority, Flex, and long-context charges. OpenAI offers no Flex
+tier for the GPT-6.2 models, so a Flex event on them gets no estimate. Ultrafast
+is priced for GPT-6 Astra, GPT-6.1 Sol, and GPT-6.2 Astra and Sol only (6x for
+the first two, 3x for GPT-6.2 until 2027-02-28); other models stay unsupported. Earlier
+supported models retain their existing rules. Unknown internal aliases remain
+unsupported.
 Claude Fable 5.2 and 5.1, Opus 5.5, Opus 5, Sonnet 5.5, and Sonnet 5 are included in the price
 catalog; Claude request costs retain their native values without an extra promotion
 multiplier. Sonnet 5.5 and Sonnet 5 both cost $2/$10 per million input/output tokens.

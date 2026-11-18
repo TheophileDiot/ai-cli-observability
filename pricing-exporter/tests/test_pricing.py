@@ -33,6 +33,12 @@ class PricingTests(unittest.TestCase):
             "GPT54_MINI_IN": "0.75",
             "GPT54_MINI_CACHED": "0.075",
             "GPT54_MINI_OUT": "4.5",
+            "GPT62_ASTRA_IN": "8",
+            "GPT62_ASTRA_CACHED": "0.4",
+            "GPT62_ASTRA_OUT": "40",
+            "GPT62_SOL_IN": "2",
+            "GPT62_SOL_CACHED": "0.1",
+            "GPT62_SOL_OUT": "10",
             "GPT56_SOL_IN": "4",
             "GPT56_SOL_CACHED": "0.4",
             "GPT56_SOL_OUT": "20",
@@ -59,7 +65,10 @@ class PricingTests(unittest.TestCase):
             "GPT6_LUNA_OUT": "0.5",
         }
         for name, value in expected.items():
-            self.assertEqual((pricing_dir / name).read_text(), value)
+            with self.subTest(name=name):
+                price_file = pricing_dir / name
+                self.assertTrue(price_file.is_file(), f"Missing price file: {name}")
+                self.assertEqual(price_file.read_text(), value)
 
         terra_prices = dict(
             exporter.db.execute(
